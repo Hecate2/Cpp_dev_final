@@ -32,13 +32,15 @@ class MainScene : public cocos2d::Scene
 {
 public:
     virtual bool init() override;
-	void addMonster(float dt);
-	bool onTouchBegan(cocos2d::Touch* touch, cocos2d::Event* unused_event);
-	bool onContactBegin(cocos2d::PhysicsContact& contact);
+	bool onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact);
     static cocos2d::Scene* scene();
 	bool onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event* event);
     void menuCloseCallback(Ref* sender);
-
+	void scheduleBlood(float delta);
+	void addhp(float delta);
+	void addBarrel();
+	void addBox();
+	bool onContactBegin_player_box(cocos2d::PhysicsContact& contact);
     // implement the "static create()" method manually
     CREATE_FUNC(MainScene);
 private:
