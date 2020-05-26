@@ -52,9 +52,18 @@ bool MainScene::init()
 	}
 	auto winSize = Director::getInstance()->getVisibleSize();
 	auto origin = Director::getInstance()->getVisibleOrigin();
-	auto background = DrawNode::create();
-	background->drawSolidRect(origin, winSize, cocos2d::Color4F(0.6, 0.6, 0.6, 1.0));
-	this->addChild(background);
+	/*auto background = DrawNode::create();
+	background->drawSolidRect(origin, winSize, cocos2d::Color4F(0.6, 0.6, 0.6, 1.0));*/
+	auto background = Sprite::create("background.png");
+	if (background){
+		background->setPosition(Vec2(origin.x + CENTER_X, origin.y + CENTER_Y));
+
+		background->setScale(1.0f);
+		this->addChild(background);
+	}
+	//this->addChild(background);
+
+
 	this->addBarrel();
 	this->addBox();
 	//auto spritecache = SpriteFrameCache::getInstance();

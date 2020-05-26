@@ -31,9 +31,9 @@ bool Start::init()
 	auto bg = Sprite::create("startbg.png");
 	if (bg)
 	{
-		bg->setPosition(Vec2(origin.x+236,origin.y+150));
+		bg->setPosition(Vec2(origin.x+CENTER_X,origin.y+CENTER_Y));
 
-		bg->setScale(1.5f );
+		bg->setScale(1.6f );
 		this->addChild(bg);
 	}
 
