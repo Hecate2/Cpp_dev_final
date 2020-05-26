@@ -24,9 +24,12 @@
 
 #include "MainScene.h"
 #include "AppMacros.h"
-
+#include "math.h"
 USING_NS_CC;
-
+#define BOX_TAG 7
+#define BULLET_TAG 10
+#define BARREL_TAG 8
+#define PLAYER_TAG 2
 
 Scene* MainScene::scene()
 {
@@ -42,45 +45,44 @@ bool MainScene::init()
 	{
 		return false;
 	}
-	// 初始化Physics
+	// Initialze with Physics
 	if (!Scene::initWithPhysics())
 	{
 		return false;
 	}
-
 	auto winSize = Director::getInstance()->getVisibleSize();
 	auto origin = Director::getInstance()->getVisibleOrigin();
-
 	auto background = DrawNode::create();
 	background->drawSolidRect(origin, winSize, cocos2d::Color4F(0.6, 0.6, 0.6, 1.0));
 	this->addChild(background);
-
-	
+	this->addBarrel();
+	this->addBox();
 	//auto spritecache = SpriteFrameCache::getInstance();
 	//spritecache->addSpriteFramesWithFile("player.plist");
-	
 	_player = player::create("UP_02.png");
 	_player->setPosition(Vec2(winSize.width * 0.1, winSize.height * 0.5));
+	_player->init();
+	_player->change_weapon(1);
+	auto physicsBody = PhysicsBody::createBox(_player->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
+	physicsBody->setDynamic(false);
+	physicsBody->setContactTestBitmask(0xFFFFFFFF);
+	_player->setPhysicsBody(physicsBody);
+	_player->setTag(PLAYER_TAG);
 	this->addChild(_player);
+	//renew the blood timely
+	schedule(CC_SCHEDULE_SELECTOR(MainScene::scheduleBlood), 0.1f);  //renew the display of the blood
+	schedule(CC_SCHEDULE_SELECTOR(MainScene::addhp), 1.0f);//add hp every 1s
 	
-	
-	//下面有关于怪物的都是之前用于测试碰撞的代码，因为后面可能会用到，暂时保留
-	// 初始化了随机数生成器。如果不执行这一步，每次运行程序都会产生一样的随机数。
-	srand((unsigned int)time(nullptr));
-	// 每隔1.5秒生成一个怪物
-	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::addMonster), 1);
-	auto eventListener = EventListenerTouchOneByOne::create();
-	// 定义回调函数onTouchBegan():手指第一次碰到屏幕时被调用。
-	eventListener->onTouchBegan = CC_CALLBACK_2(MainScene::onTouchBegan, this);
-	// 使用EventDispatcher来处理各种各样的事件，如触摸和其他键盘事件。
-	this->getEventDispatcher()->addEventListenerWithSceneGraphPriority(eventListener, _player);
+	// detects the contaction of bullet and barrel
+	auto contactListener0 = EventListenerPhysicsContact::create();
+	contactListener0->onContactBegin = CC_CALLBACK_1(MainScene::onContactBegin_bullet_barrel, this);
+	_eventDispatcher->addEventListenerWithSceneGraphPriority(contactListener0, this);
+	//detects the contaction of box and player
+	auto contactListener1 = EventListenerPhysicsContact::create();
+	contactListener1->onContactBegin = CC_CALLBACK_1(MainScene::onContactBegin_player_box, this);
+	_eventDispatcher->addEventListenerWithSceneGraphPriority(contactListener1, this);
 
-	// 碰撞检测
-	auto contactListener = EventListenerPhysicsContact::create();
-	contactListener->onContactBegin = CC_CALLBACK_1(MainScene::onContactBegin, this);
-	_eventDispatcher->addEventListenerWithSceneGraphPriority(contactListener, this);
-
-	// creating a keyboard event listener
+	// creating a keyboard event listener to control the player
 	auto listener = EventListenerKeyboard::create();
 	listener->onKeyPressed = CC_CALLBACK_2(MainScene::onKeyPressed, this);
 
@@ -144,8 +146,7 @@ bool MainScene::onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode,cocos2d::Ev
 		projectile->setTag(10);
 		this->addChild(projectile);
 		Vec2 shootAmount;
-		weapon tmp_weapon;
-		tmp_weapon = _player->get_weapon_attribute();
+		auto tmp_weapon = _player->get_weapon_attribute();
 		switch (_player->get_direction()) {
 		case player::UP:
 			shootAmount = Vec2(0, tmp_weapon.distance);
@@ -161,6 +162,7 @@ bool MainScene::onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode,cocos2d::Ev
 			break;
 		}
 		_player->decrease_weapon_num();
+		_player->renew_display_num();
 		auto realDest = shootAmount + projectile->getPosition();
 		int normal_speed = 5;
 		auto actionMove = MoveTo::create(0.5f*normal_speed/tmp_weapon.speed, realDest);
@@ -169,104 +171,99 @@ bool MainScene::onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode,cocos2d::Ev
 	}
 	return true;
 }
-
-void MainScene::addMonster(float dt) {
-	auto monster = Sprite::create("Monster.png");
-
-	// Add monster
-	auto monsterContentSize = monster->getContentSize();
-	auto selfContentSize = this->getContentSize();
-	int minY = monsterContentSize.height / 2;
-	int maxY = selfContentSize.height - minY;
-	int rangeY = maxY - minY;
-	int randomY = (rand() % rangeY) + minY;
-	monster->setPosition(Vec2(selfContentSize.width + monsterContentSize.width / 2, randomY));
-	// Add monster's physicsBody
-	auto physicsBody = PhysicsBody::createBox(monster->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
+void MainScene::scheduleBlood(float delta) {
+	auto progress = (ProgressTimer*)_player->getChildByTag(1);
+	
+	progress->setPercentage((((float)(_player->get_hp())) / 100) * 100);  //这里是百分制显示
+	if (progress->getPercentage() < 0) {
+		this->unschedule(CC_SCHEDULE_SELECTOR(MainScene::scheduleBlood));
+	}
+}
+void MainScene::addBox() {
+	auto Box = Sprite::create("box.png");
+	// Add Box
+	auto BoxContentSize = Box->getContentSize();
+	Box->setPosition(Vec2(200, 200));
+	// Add Box's physicsBody
+	auto physicsBody = PhysicsBody::createBox(Box->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
 	physicsBody->setDynamic(false);
 	physicsBody->setContactTestBitmask(0xFFFFFFFF);
-	monster->setPhysicsBody(physicsBody);
-
-	// Add projectile's physicsBody
-
-
-	this->addChild(monster);
-
-	// Let monster run
-	int minDuration = 2.0;
-	int maxDuration = 4.0;
-	int rangeDuration = maxDuration - minDuration;
-	int randomDuration = (rand() % rangeDuration) + minDuration;
-
-	// 定义移动的object
-	// 在randomDuration这个时间内(2-4秒内)，让怪物从屏幕右边移动到左边。(怪物有快有慢)
-	auto actionMove = MoveTo::create(randomDuration, Vec2(-monsterContentSize.width / 2, randomY));
-	// 定义消除的Object。怪物移出屏幕后被消除，释放资源。
-	auto actionRemove = RemoveSelf::create();
-	monster->runAction(Sequence::create(actionMove, actionRemove, nullptr));
+	Box->setPhysicsBody(physicsBody);
+	Box->setTag(BOX_TAG);
+	// Add Box's physicsBody
+	this->addChild(Box);
+}
+void MainScene::addBarrel() {
+	auto Barrel = Sprite::create("barrel.png");
+	// Add Barrel
+	auto BarrelContentSize = Barrel->getContentSize();
+	Barrel->setPosition(Vec2(50, 50));
+	// Add Barrel's physicsBody
+	auto physicsBody = PhysicsBody::createBox(Barrel->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
+	physicsBody->setDynamic(false);
+	physicsBody->setContactTestBitmask(0xFFFFFFFF);
+	Barrel->setPhysicsBody(physicsBody);
+	Barrel->setTag(BARREL_TAG);
+	// Add Barrel's physicsBody
+	this->addChild(Barrel);
 }
 
+void MainScene::addhp(float delta) {
+	_player->add_hp_timely();
+}
 void MainScene::menuCloseCallback(Ref* sender)
 {
     Director::getInstance()->end();
 }
 
-// HelloWorldScene.cpp
-bool MainScene::onTouchBegan(Touch* touch, Event* unused_event) {
-	// 1 - Just an example for how to get the player object
-	// 说明一下作为第二个参数传递给addEventListenerWithSceneGraphPriority(eventListener, _player)的_player对象被访问的方式。
-	// auto node = unused_event->getcurrentTarget();
-
-	// 2.获取触摸点的坐标，并计算这个点相对于_player的偏移量。
-	Vec2 touchLocation = touch->getLocation();
-	Vec2 offset = touchLocation - _player->getPosition();
-	// 如果offset的x值是负值，这表明玩家正试图朝后射击。在本游戏中这是不允许的。
-	if (offset.x < 0) {
-		return true;
+bool MainScene::onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact) {
+	auto nodeA = contact.getShapeA()->getBody()->getNode();
+	auto nodeB = contact.getShapeB()->getBody()->getNode();
+	if (nodeA && nodeB)
+	{
+		if (nodeA->getTag() == BARREL_TAG && nodeB->getTag() == BULLET_TAG)
+		{
+			auto position_tmp = nodeA->getPosition();
+			if (abs(_player->getPosition().x - position_tmp.x)+abs(_player->getPosition().y - position_tmp.y) < 500) {
+				_player->decrease_hp_barrel();
+			}
+			nodeA->removeFromParentAndCleanup(true);
+		}
+		else if (nodeB->getTag() == BARREL_TAG && nodeA->getTag() ==BULLET_TAG)
+		{
+			auto position_tmp = nodeB->getPosition();
+			if (abs(_player->getPosition().x - position_tmp.x)+abs(_player->getPosition().y - position_tmp.y) < 500) {
+				_player->decrease_hp_barrel();
+			}
+			nodeB->removeFromParentAndCleanup(true);
+		}
 	}
-
-	// 3.在玩家所在的位置创建一个飞镖，将其添加到场景中。
-	auto projectile = Sprite::create("bullet.png");
-	projectile->setPosition(_player->getPosition());
-	auto physicsBody = PhysicsBody::createBox(projectile->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
-	physicsBody->setDynamic(false);
-	physicsBody->setContactTestBitmask(0xFFFFFFFF);
-	projectile->setPhysicsBody(physicsBody);
-	projectile->setTag(10);
-	this->addChild(projectile);
-
-	// 4.将偏移量转化为单位向量，即长度为1的向量。
-	offset.normalize();
-	// 将其乘以1000，你就获得了一个指向用户触屏方向的长度为1000的向量。为什么是1000呢？因为长度应当足以超过当前分辨率下屏幕的边界。
-	auto shootAmount = offset * 1000;
-	// 将此向量添加到飞镖的位置上去，这样你就有了一个目标位置。
-	auto realDest = shootAmount + projectile->getPosition();
-
-	// 5.创建一个动作，将飞镖在2秒内移动到目标位置，然后将它从场景中移除。
-	auto actionMove = MoveTo::create(2.0f, realDest);
-	auto actionRemove = RemoveSelf::create();
-	projectile->runAction(Sequence::create(actionMove, actionRemove, nullptr));
-
 	return true;
 }
 
-bool MainScene::onContactBegin(cocos2d::PhysicsContact& contact)
-{
+bool MainScene::onContactBegin_player_box(cocos2d::PhysicsContact& contact) {
 	auto nodeA = contact.getShapeA()->getBody()->getNode();
 	auto nodeB = contact.getShapeB()->getBody()->getNode();
-
+	bool contact_flag = false;
 	if (nodeA && nodeB)
 	{
-		if (nodeA->getTag() == 10)
+		if (nodeA->getTag() == BOX_TAG && nodeB->getTag() ==PLAYER_TAG)
 		{
-			nodeB->removeFromParentAndCleanup(true);
-		}
-		else if (nodeB->getTag() == 10)
-		{
+			auto position_tmp = nodeA->getPosition();
 			nodeA->removeFromParentAndCleanup(true);
+			contact_flag = true;
+		}
+		else if (nodeB->getTag() == BOX_TAG && nodeA->getTag() == PLAYER_TAG)
+		{
+			auto position_tmp = nodeB->getPosition();
+			nodeB->removeFromParentAndCleanup(true);
+			contact_flag = true;
 		}
 	}
-
+	if (contact_flag) {
+		_player->add_bullet_random();
+		_player->renew_display_num();
+	}
 	return true;
 }
 
