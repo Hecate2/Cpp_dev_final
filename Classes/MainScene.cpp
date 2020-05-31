@@ -52,10 +52,23 @@ bool MainScene::init()
 	}
 	auto winSize = Director::getInstance()->getVisibleSize();
 	auto origin = Director::getInstance()->getVisibleOrigin();
+<<<<<<< Updated upstream
 	auto background = DrawNode::create();
 	background->drawSolidRect(origin, winSize, cocos2d::Color4F(0.6, 0.6, 0.6, 1.0));
 	this->addChild(background);
 	this->addBarrel();
+=======
+	/*auto background = DrawNode::create();
+background->drawSolidRect(origin, winSize, cocos2d::Color4F(0.6, 0.6, 0.6, 1.0));*/
+	auto background = Sprite::create("background.png");
+	if (background) {
+		background->setPosition(Vec2(origin.x + CENTER_X, origin.y + CENTER_Y));
+
+		background->setScale(1.0f);
+		this->addChild(background);
+	}
+	this->addBarrel(Vec2(50,50));
+>>>>>>> Stashed changes
 	this->addBox();
 	//auto spritecache = SpriteFrameCache::getInstance();
 	//spritecache->addSpriteFramesWithFile("player.plist");
@@ -98,26 +111,26 @@ bool MainScene::onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode,cocos2d::Ev
 		auto animation = Animation::create();
 		char nameSize[20];
 		char openfile[11]="UP_0%d.png";
-		auto moveBy = MoveBy::create(0.1, Vec2(0, 5));
+		auto moveBy = MoveBy::create(0.08, Vec2(0, 10));
 		_player->set_direction(player::UP);
 		switch (keyCode)
 		{
 		case cocos2d::EventKeyboard::KeyCode::KEY_A:
 			openfile[0] = 'L';
 			openfile[1] = 'F';
-			moveBy = MoveBy::create(0.1, Vec2(-5, 0));
+			moveBy = MoveBy::create(0.08, Vec2(-10, 0));
 			_player->set_direction(player::LEFT);
 			break;
 		case cocos2d::EventKeyboard::KeyCode::KEY_S:
 			openfile[0] = 'D';
 			openfile[1] = 'O';
-			moveBy = MoveBy::create(0.1, Vec2(0,-5));
+			moveBy = MoveBy::create(0.08, Vec2(0,-10));
 			_player->set_direction(player::DOWN);
 			break;
 		case cocos2d::EventKeyboard::KeyCode::KEY_D:
 			openfile[0] = 'R';
 			openfile[1] = 'I';
-			moveBy = MoveBy::create(0.1, Vec2(5, 0));
+			moveBy = MoveBy::create(0.08, Vec2(10, 0));
 			_player->set_direction(player::RIGHT);
 			break;
 		default:
@@ -137,14 +150,41 @@ bool MainScene::onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode,cocos2d::Ev
 	}
 
 	if (keyCode == EventKeyboard::KeyCode::KEY_J) {
-		auto projectile = Sprite::create("bullet.png");
-		projectile->setPosition(_player->getPosition());
-		auto physicsBody = PhysicsBody::createBox(projectile->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
+		if (_player->Is_out_of_bullet()) {
+			change_weapon_animation((_player->get_weapon_attribute()).weapon_name,true);
+			return true;
+		}
+		if ((_player->get_weapon_attribute()).weapon_name == "barrel") {
+			int tmp_barrel_distance=50;
+			Vec2 shootAmount;
+			switch (_player->get_direction()) {
+			case player::UP:
+				shootAmount = Vec2(0, tmp_barrel_distance);
+				break;
+			case player::DOWN:
+				shootAmount = Vec2(0, -tmp_barrel_distance);
+				break;
+			case player::LEFT:
+				shootAmount = Vec2(-tmp_barrel_distance, 0);
+				break;
+			case player::RIGHT:
+				shootAmount = Vec2(tmp_barrel_distance, 0);
+				break;
+			}
+			addBarrel(_player->getPosition()+shootAmount);
+			_player->decrease_weapon_num();
+			_player->renew_display_num();
+			return true;
+		}
+		auto bullet = Sprite::create("bullet.png");
+		bullet->setPosition(_player->getPosition());
+		//add physics
+		auto physicsBody = PhysicsBody::createBox(bullet->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
 		physicsBody->setDynamic(false);
 		physicsBody->setContactTestBitmask(0xFFFFFFFF);
-		projectile->setPhysicsBody(physicsBody);
-		projectile->setTag(10);
-		this->addChild(projectile);
+		bullet->setPhysicsBody(physicsBody);
+		bullet->setTag(10);
+		this->addChild(bullet);
 		Vec2 shootAmount;
 		auto tmp_weapon = _player->get_weapon_attribute();
 		switch (_player->get_direction()) {
@@ -163,14 +203,48 @@ bool MainScene::onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode,cocos2d::Ev
 		}
 		_player->decrease_weapon_num();
 		_player->renew_display_num();
-		auto realDest = shootAmount + projectile->getPosition();
+		auto realDest = shootAmount + bullet->getPosition();
 		int normal_speed = 5;
 		auto actionMove = MoveTo::create(0.5f*normal_speed/tmp_weapon.speed, realDest);
 		auto actionRemove = RemoveSelf::create();
-		projectile->runAction(Sequence::create(actionMove, actionRemove, nullptr));
+		bullet->runAction(Sequence::create(actionMove, actionRemove, nullptr));
+	}
+
+	if (keyCode == EventKeyboard::KeyCode::KEY_1 || keyCode == EventKeyboard::KeyCode::KEY_2 ||
+		keyCode == EventKeyboard::KeyCode::KEY_3 || keyCode == EventKeyboard::KeyCode::KEY_4) {
+		bool success_change;
+		switch (keyCode)
+		{
+		case cocos2d::EventKeyboard::KeyCode::KEY_1:
+			success_change=_player->change_weapon(0);
+			break;
+		case cocos2d::EventKeyboard::KeyCode::KEY_2:
+			success_change = _player->change_weapon(1);
+			break;
+		case cocos2d::EventKeyboard::KeyCode::KEY_3:
+			success_change = _player->change_weapon(2);
+			break;
+		default:
+			success_change = _player->change_weapon(3);
+			break;
+		}
+		if (success_change)
+			change_weapon_animation((_player->get_weapon_attribute()).weapon_name);
 	}
 	return true;
 }
+void MainScene::change_weapon_animation(const std::string& weapon_name,bool out_of_bullet) {
+	auto change_label = cocos2d::Label::createWithSystemFont("change:"+weapon_name, "Arial", 20);
+	if (out_of_bullet)
+		change_label->setString("Out of " + weapon_name);
+	change_label->setColor(Color3B::BLACK);
+	change_label->setPosition(Vec2(512,0));
+	this->addChild(change_label);
+	auto actionMove = MoveBy::create(0.3f , Vec2(0,100));
+	auto actionRemove = RemoveSelf::create();
+	change_label->runAction(Sequence::create(actionMove, actionRemove, nullptr));
+}
+
 void MainScene::scheduleBlood(float delta) {
 	auto progress = (ProgressTimer*)_player->getChildByTag(1);
 	
@@ -193,11 +267,11 @@ void MainScene::addBox() {
 	// Add Box's physicsBody
 	this->addChild(Box);
 }
-void MainScene::addBarrel() {
+void MainScene::addBarrel(const cocos2d::Vec2& s) {
 	auto Barrel = Sprite::create("barrel.png");
 	// Add Barrel
 	auto BarrelContentSize = Barrel->getContentSize();
-	Barrel->setPosition(Vec2(50, 50));
+	Barrel->setPosition(s);
 	// Add Barrel's physicsBody
 	auto physicsBody = PhysicsBody::createBox(Barrel->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
 	physicsBody->setDynamic(false);

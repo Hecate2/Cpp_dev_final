@@ -22,17 +22,17 @@ bool player::init() {
 	weapon_store[3] = weapon(10, 0, 0, 0, 10, "barrel");
 	//initialze current weapon
 	current_weapon = &(weapon_store[0]);
-	current_weapon_label = cocos2d::Label::createWithSystemFont("pistol", "Arial", 8);
-	current_weapon_label->setPosition(cocos2d::Vec2(40, 100));
+	current_weapon_label = cocos2d::Label::createWithSystemFont("pistol", "Arial", 15);
+	current_weapon_label->setPosition(cocos2d::Vec2(80, 180));
 	this->addChild(current_weapon_label);
 	//initialize hp bar
 	auto sprite = Sprite::create("bar.png");   
-	sprite->setPosition(cocos2d::Vec2(this->getPosition().x-10, this->getPosition().y - 80)); 
+	sprite->setPosition(cocos2d::Vec2(this->getPosition().x-20, 150)); 
 	this->addChild(sprite);            
 	auto sprBlood = Sprite::create("blood.png");  //create blood bar
 	cocos2d::ProgressTimer* progress = cocos2d::ProgressTimer::create(sprBlood); //create progress
 	progress->setType(cocos2d::ProgressTimer::Type::BAR);        //settype bar
-	progress->setPosition(cocos2d::Vec2(this->getPosition().x-10, this->getPosition().y - 80));
+	progress->setPosition(cocos2d::Vec2(this->getPosition().x-20, 150));
 	//decrease from right to left
 	progress->setMidpoint(cocos2d::Point(0, 0.5));    
 	progress->setBarChangeRate(cocos2d::Point(1, 0));
