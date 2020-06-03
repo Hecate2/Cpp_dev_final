@@ -36,7 +36,7 @@ Scene* MainScene::scene()
      return MainScene::create();
 }
 
-// on "init" you need to initialize your instance
+// 初始化
 bool MainScene::init()
 {
     //////////////////////////////
@@ -52,14 +52,9 @@ bool MainScene::init()
 	}
 	auto winSize = Director::getInstance()->getVisibleSize();
 	auto origin = Director::getInstance()->getVisibleOrigin();
-<<<<<<< Updated upstream
-	auto background = DrawNode::create();
-	background->drawSolidRect(origin, winSize, cocos2d::Color4F(0.6, 0.6, 0.6, 1.0));
-	this->addChild(background);
-	this->addBarrel();
-=======
-	/*auto background = DrawNode::create();
-background->drawSolidRect(origin, winSize, cocos2d::Color4F(0.6, 0.6, 0.6, 1.0));*/
+	
+
+	//设置游戏背景
 	auto background = Sprite::create("background.png");
 	if (background) {
 		background->setPosition(Vec2(origin.x + CENTER_X, origin.y + CENTER_Y));
@@ -67,11 +62,8 @@ background->drawSolidRect(origin, winSize, cocos2d::Color4F(0.6, 0.6, 0.6, 1.0))
 		background->setScale(1.0f);
 		this->addChild(background);
 	}
-	this->addBarrel(Vec2(50,50));
->>>>>>> Stashed changes
-	this->addBox();
-	//auto spritecache = SpriteFrameCache::getInstance();
-	//spritecache->addSpriteFramesWithFile("player.plist");
+	
+	//玩家初始化
 	_player = player::create("UP_02.png");
 	_player->setPosition(Vec2(winSize.width * 0.1, winSize.height * 0.5));
 	_player->init();
@@ -86,6 +78,17 @@ background->drawSolidRect(origin, winSize, cocos2d::Color4F(0.6, 0.6, 0.6, 1.0))
 	schedule(CC_SCHEDULE_SELECTOR(MainScene::scheduleBlood), 0.1f);  //renew the display of the blood
 	schedule(CC_SCHEDULE_SELECTOR(MainScene::addhp), 1.0f);//add hp every 1s
 	
+	//添加两个物品
+	this->addBarrel(Vec2(50, 50));
+	this->addBox();
+
+	//添加一个boss僵尸
+	this->addBigMonster(0);
+
+	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::monster_move),1.0,-1,0);
+	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::monster_attack), 1.0, -1, 0);
+
+
 	// detects the contaction of bullet and barrel
 	auto contactListener0 = EventListenerPhysicsContact::create();
 	contactListener0->onContactBegin = CC_CALLBACK_1(MainScene::onContactBegin_bullet_barrel, this);
@@ -103,6 +106,8 @@ background->drawSolidRect(origin, winSize, cocos2d::Color4F(0.6, 0.6, 0.6, 1.0))
 
     return true;
 }
+
+//用于控制人物移动、攻击、换枪的按键回调函数
 bool MainScene::onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode,cocos2d::Event* event)
 {	//keyboard callbackfunction to controll the player
 	log("Key with keycode %d pressed", keyCode);
@@ -233,6 +238,8 @@ bool MainScene::onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode,cocos2d::Ev
 	}
 	return true;
 }
+
+//换武器以及子弹用光后，显示在画面下方的文字
 void MainScene::change_weapon_animation(const std::string& weapon_name,bool out_of_bullet) {
 	auto change_label = cocos2d::Label::createWithSystemFont("change:"+weapon_name, "Arial", 20);
 	if (out_of_bullet)
@@ -248,11 +255,13 @@ void MainScene::change_weapon_animation(const std::string& weapon_name,bool out_
 void MainScene::scheduleBlood(float delta) {
 	auto progress = (ProgressTimer*)_player->getChildByTag(1);
 	
-	progress->setPercentage((((float)(_player->get_hp())) / 100) * 100);  //�����ǰٷ�����ʾ
+	progress->setPercentage((((float)(_player->get_hp())) / 100) * 100);  //设定百分比
 	if (progress->getPercentage() < 0) {
 		this->unschedule(CC_SCHEDULE_SELECTOR(MainScene::scheduleBlood));
 	}
 }
+
+//添加箱子的方法
 void MainScene::addBox() {
 	auto Box = Sprite::create("box.png");
 	// Add Box
@@ -267,6 +276,8 @@ void MainScene::addBox() {
 	// Add Box's physicsBody
 	this->addChild(Box);
 }
+
+//添加油漆桶的方法
 void MainScene::addBarrel(const cocos2d::Vec2& s) {
 	auto Barrel = Sprite::create("barrel.png");
 	// Add Barrel
@@ -282,6 +293,8 @@ void MainScene::addBarrel(const cocos2d::Vec2& s) {
 	this->addChild(Barrel);
 }
 
+
+
 void MainScene::addhp(float delta) {
 	_player->add_hp_timely();
 }
@@ -290,6 +303,7 @@ void MainScene::menuCloseCallback(Ref* sender)
     Director::getInstance()->end();
 }
 
+//子弹打到油桶上
 bool MainScene::onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact) {
 	auto nodeA = contact.getShapeA()->getBody()->getNode();
 	auto nodeB = contact.getShapeB()->getBody()->getNode();
@@ -315,6 +329,7 @@ bool MainScene::onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact) {
 	return true;
 }
 
+//吃箱子
 bool MainScene::onContactBegin_player_box(cocos2d::PhysicsContact& contact) {
 	auto nodeA = contact.getShapeA()->getBody()->getNode();
 	auto nodeB = contact.getShapeB()->getBody()->getNode();
@@ -339,6 +354,65 @@ bool MainScene::onContactBegin_player_box(cocos2d::PhysicsContact& contact) {
 		_player->renew_display_num();
 	}
 	return true;
+}
+
+//添加boss僵尸的方法 	birthpoint: 0->上  1->下  2->左   3->右
+void MainScene::addBigMonster(int birth_point) {
+	auto boss = BigMonster::create("Boss_DO_01.png");
+	_BigMonster.push_back(boss);
+	//根据出生地选择初始的位置  768*1024
+	switch (birth_point) {
+	case 0: {
+		boss->setPosition(Vec2(512, 786));
+		break;
+	}
+	case 1: {
+		boss->setPosition(Vec2(512, 0));
+		break;
+	}
+	case 2: {
+		boss->setPosition(Vec2(0, 393));
+		break;
+	}
+	case 3: {
+		boss->setPosition(Vec2(1024, 393));
+		break;
+	}
+	default: {
+		boss->setPosition(Vec2(300, 300));
+		break;
+	}
+	}
+
+	this->addChild(boss);
+
+}
+
+//僵尸移动的调度器
+void MainScene::monster_move(float dt) {
+	auto destination = _player->getPosition();
+	for (auto k : _BigMonster) {
+		auto source = k->getPosition();
+		auto diff = destination - source;
+		if (fabs(diff.x) > 200 || fabs(diff.y) > 200) {
+			auto direction = getdirection(diff);
+			k->move(direction);
+		}
+	}
+
+}
+//僵尸攻击的调度器
+void MainScene::monster_attack(float dt){
+	auto destination = _player->getPosition();
+	for (auto k : _BigMonster) {
+		auto source = k->getPosition();
+		auto diff = destination - source;
+		if (fabs(diff.x) < 200 && fabs(diff.y) < 200) {
+			auto direction = getdirection(diff);
+			k->attack(diff);
+		}
+	}
+
 }
 
 
