@@ -22,39 +22,23 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef __MAIN_SCENE_H__
-#define __MAIN_SCENE_H__
+//{{NO_DEPENDENCIES}}
+// Microsoft Visual C++ generated include file.
+// Used by game.RC
+//
 
-#include "cocos2d.h"
-#include "player.h"
-#include "monster.h"
-#include <vector>
+#define IDS_PROJNAME                100
+#define IDR_TESTJS    100
 
-class MainScene : public cocos2d::Scene
-{
-public:
-    virtual bool init() override;
-	bool onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact);
-    static cocos2d::Scene* scene();
-	bool onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event* event);
-	
-    void menuCloseCallback(Ref* sender);
-	void scheduleBlood(float delta);
-	void addhp(float delta);
-	void addBarrel(const cocos2d::Vec2& s);
-	void addBox();
-	void change_weapon_animation(const std::string& weapon_name, bool out_of_bullet = false);
-	bool onContactBegin_player_box(cocos2d::PhysicsContact& contact);
-    void monster_move(float dt);    //僵尸移动的调度器函数
-    void monster_attack(float dt);  //僵尸攻击的调度器函数
-    void addBigMonster(int birth_point);        //添加僵尸，参数为出生地
-    // implement the "static create()" method manually
-    CREATE_FUNC(MainScene);
-private:
-	player* _player;
-    std::vector<BigMonster*> _BigMonster;
+#define ID_FILE_NEW_WINDOW            32771
 
-	int score=0;
-};
-
-#endif // __HELLOWORLD_SCENE_H__
+// Next default values for new objects
+// 
+#ifdef APSTUDIO_INVOKED
+#ifndef APSTUDIO_READONLY_SYMBOLS
+#define _APS_NEXT_RESOURCE_VALUE    201
+#define _APS_NEXT_CONTROL_VALUE        1000
+#define _APS_NEXT_SYMED_VALUE        101
+#define _APS_NEXT_COMMAND_VALUE        32775
+#endif
+#endif
