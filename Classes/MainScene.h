@@ -27,6 +27,8 @@
 
 #include "cocos2d.h"
 #include "player.h"
+#include "monster.h"
+#include <vector>
 
 class MainScene : public cocos2d::Scene
 {
@@ -35,16 +37,36 @@ public:
 	bool onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact);
     static cocos2d::Scene* scene();
 	bool onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event* event);
+<<<<<<< Updated upstream
     void menuCloseCallback(Ref* sender);
 	void scheduleBlood(float delta);
 	void addhp(float delta);
 	void addBarrel();
 	void addBox();
+=======
+	bool onKeyReleased(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event* event);
+	//Direction Judgedirection(const Vec2& mon_pos);
+    void menuCloseCallback(Ref* sender);
+	void scheduleBlood(float delta);
+	void addhp(float delta);
+	void always_move(float delta);
+	void addBarrel(const cocos2d::Vec2& s);
+	void addBox();
+	void change_weapon_animation(const std::string& weapon_name, bool out_of_bullet = false);
+	void player_move(cocos2d::EventKeyboard::KeyCode keyCode);
+	//void mov_monsters(float delta);
+>>>>>>> Stashed changes
 	bool onContactBegin_player_box(cocos2d::PhysicsContact& contact);
     // implement the "static create()" method manually
     CREATE_FUNC(MainScene);
 private:
 	player* _player;
+<<<<<<< Updated upstream
+=======
+	int score=0;
+	std::map<cocos2d::EventKeyboard::KeyCode, bool> keys;
+	std::vector<BigMonster*> _BigMonster;
+>>>>>>> Stashed changes
 };
 
 #endif // __HELLOWORLD_SCENE_H__

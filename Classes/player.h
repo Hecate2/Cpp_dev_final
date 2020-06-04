@@ -18,6 +18,7 @@ public:
 	int Damage = 5;
 	int distance = 200;
 	int max_num = 100;
+	bool enable = true;
 	std::string weapon_name;
 };
 class player :public cocos2d::Sprite {
@@ -34,15 +35,24 @@ public:
 	weapon get_weapon_attribute() {
 		return (*current_weapon);
 	}
+	bool Is_out_of_bullet() {
+		return (current_weapon->num == 0);
+	}
+	bool Is_barrel() {
+		return current_weapon->weapon_name == "barrel";
+	}
 	void decrease_weapon_num() {
 		(*current_weapon).num--;
 	}
-	void change_weapon(int weapon_option) {
+	bool change_weapon(int weapon_option) {
+		if (!weapon_store[weapon_option].enable)
+			return false;
 		current_weapon = &(weapon_store[weapon_option]);
 		if (weapon_option)
 			current_weapon_label->setString(current_weapon->weapon_name + ":" + std::to_string(current_weapon->num));
 		else
 			current_weapon_label->setString(current_weapon->weapon_name);
+		return true;
 	}
 	int get_hp() {
 		return hp;
@@ -55,7 +65,8 @@ public:
 			hp++;
 	}
 	void renew_display_num() {
-		current_weapon_label->setString(current_weapon->weapon_name + ":"+std::to_string(current_weapon->num));
+		if (current_weapon->weapon_name!="pistol")
+			current_weapon_label->setString(current_weapon->weapon_name + ":"+std::to_string(current_weapon->num));
 	}
 	void add_bullet_random() {
 		for (int i = 1; i < 4; i++) {
