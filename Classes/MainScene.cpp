@@ -171,14 +171,41 @@ bool MainScene::onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode,cocos2d::Ev
 	}
 	keys[keyCode] = true;
 	if (keyCode == EventKeyboard::KeyCode::KEY_J) {
-		auto projectile = Sprite::create("bullet.png");
-		projectile->setPosition(_player->getPosition());
-		auto physicsBody = PhysicsBody::createBox(projectile->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
+		if (_player->Is_out_of_bullet()) {
+			change_weapon_animation((_player->get_weapon_attribute()).weapon_name,true);
+			return true;
+		}
+		if ((_player->get_weapon_attribute()).weapon_name == "barrel") {
+			int tmp_barrel_distance=50;
+			Vec2 shootAmount;
+			switch (_player->get_direction()) {
+			case player::UP:
+				shootAmount = Vec2(0, tmp_barrel_distance);
+				break;
+			case player::DOWN:
+				shootAmount = Vec2(0, -tmp_barrel_distance);
+				break;
+			case player::LEFT:
+				shootAmount = Vec2(-tmp_barrel_distance, 0);
+				break;
+			case player::RIGHT:
+				shootAmount = Vec2(tmp_barrel_distance, 0);
+				break;
+			}
+			addBarrel(_player->getPosition()+shootAmount);
+			_player->decrease_weapon_num();
+			_player->renew_display_num();
+			return true;
+		}
+		auto bullet = Sprite::create("bullet.png");
+		bullet->setPosition(_player->getPosition());
+		//add physics
+		auto physicsBody = PhysicsBody::createBox(bullet->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
 		physicsBody->setDynamic(false);
 		physicsBody->setContactTestBitmask(0xFFFFFFFF);
-		projectile->setPhysicsBody(physicsBody);
-		projectile->setTag(10);
-		this->addChild(projectile);
+		bullet->setPhysicsBody(physicsBody);
+		bullet->setTag(10);
+		this->addChild(bullet);
 		Vec2 shootAmount;
 		auto tmp_weapon = _player->get_weapon_attribute();
 		switch (_player->get_direction()) {
@@ -197,11 +224,33 @@ bool MainScene::onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode,cocos2d::Ev
 		}
 		_player->decrease_weapon_num();
 		_player->renew_display_num();
-		auto realDest = shootAmount + projectile->getPosition();
+		auto realDest = shootAmount + bullet->getPosition();
 		int normal_speed = 5;
 		auto actionMove = MoveTo::create(0.5f*normal_speed/tmp_weapon.speed, realDest);
 		auto actionRemove = RemoveSelf::create();
-		projectile->runAction(Sequence::create(actionMove, actionRemove, nullptr));
+		bullet->runAction(Sequence::create(actionMove, actionRemove, nullptr));
+	}
+
+	if (keyCode == EventKeyboard::KeyCode::KEY_1 || keyCode == EventKeyboard::KeyCode::KEY_2 ||
+		keyCode == EventKeyboard::KeyCode::KEY_3 || keyCode == EventKeyboard::KeyCode::KEY_4) {
+		bool success_change;
+		switch (keyCode)
+		{
+		case cocos2d::EventKeyboard::KeyCode::KEY_1:
+			success_change=_player->change_weapon(0);
+			break;
+		case cocos2d::EventKeyboard::KeyCode::KEY_2:
+			success_change = _player->change_weapon(1);
+			break;
+		case cocos2d::EventKeyboard::KeyCode::KEY_3:
+			success_change = _player->change_weapon(2);
+			break;
+		default:
+			success_change = _player->change_weapon(3);
+			break;
+		}
+		if (success_change)
+			change_weapon_animation((_player->get_weapon_attribute()).weapon_name);
 	}
 	return true;
 }
@@ -313,7 +362,7 @@ void MainScene::addBarrel(const cocos2d::Vec2& s) {
 	auto Barrel = Sprite::create("barrel.png");
 	// Add Barrel
 	auto BarrelContentSize = Barrel->getContentSize();
-	Barrel->setPosition(Vec2(50, 50));
+	Barrel->setPosition(s);
 	// Add Barrel's physicsBody
 	auto physicsBody = PhysicsBody::createBox(Barrel->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
 	physicsBody->setDynamic(false);

@@ -27,6 +27,8 @@
 
 #include "cocos2d.h"
 #include "player.h"
+#include "monster.h"
+#include <vector>
 
 class MainScene : public cocos2d::Scene
 {
