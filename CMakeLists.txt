@@ -58,12 +58,14 @@ list(APPEND GAME_HEADER
      Classes/AppDelegate.h
      Classes/StartScene.h
 	 Classes/player.h
+	 Classes/monster.h
      )
 list(APPEND GAME_SOURCE
      Classes/AppDelegate.cpp
      Classes/MainScene.cpp
      Classes/StartScene.cpp
 	 Classes/player.cpp
+	 Classes/monster.cpp
      )
 
 if(ANDROID)

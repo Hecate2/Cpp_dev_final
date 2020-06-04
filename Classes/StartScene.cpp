@@ -33,7 +33,7 @@ bool Start::init()
 	{
 		bg->setPosition(Vec2(origin.x+236,origin.y+150));
 
-		bg->setScale(1.5f );
+		bg->setScale(1.6f );
 		this->addChild(bg);
 	}
 

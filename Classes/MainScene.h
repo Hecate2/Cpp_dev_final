@@ -31,20 +31,46 @@
 class MainScene : public cocos2d::Scene
 {
 public:
+	enum Direction { UP, DOWN, LEFT, RIGHT };
+	//std::vector<Sprite> monster_group;
     virtual bool init() override;
 	bool onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact);
     static cocos2d::Scene* scene();
 	bool onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event* event);
+<<<<<<< Updated upstream
     void menuCloseCallback(Ref* sender);
 	void scheduleBlood(float delta);
 	void addhp(float delta);
 	void addBarrel();
 	void addBox();
+=======
+	bool onKeyReleased(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event* event);
+	//Direction Judgedirection(const Vec2& mon_pos);
+    void menuCloseCallback(Ref* sender);
+	void scheduleBlood(float delta);
+	void addhp(float delta);
+	void always_move(float delta);
+	void addBarrel(const cocos2d::Vec2& s);
+	void addBox();
+	void change_weapon_animation(const std::string& weapon_name, bool out_of_bullet = false);
+	void player_move(cocos2d::EventKeyboard::KeyCode keyCode);
+	//void mov_monsters(float delta);
+>>>>>>> Stashed changes
 	bool onContactBegin_player_box(cocos2d::PhysicsContact& contact);
     // implement the "static create()" method manually
+
+	void monster_move(float dt);    //僵尸移动的调度器函数
+	void monster_attack(float dt);  //僵尸攻击的调度器函数
+	void addBigMonster(int birth_point);        //添加僵尸，参数为出生地
     CREATE_FUNC(MainScene);
 private:
 	player* _player;
+<<<<<<< Updated upstream
+=======
+	int score=0;
+	std::map<cocos2d::EventKeyboard::KeyCode, bool> keys;
+	std::vector<BigMonster*> _BigMonster;
+>>>>>>> Stashed changes
 };
 
 #endif // __HELLOWORLD_SCENE_H__
