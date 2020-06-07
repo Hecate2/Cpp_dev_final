@@ -52,15 +52,6 @@ bool MainScene::init()
 	}
 	auto winSize = Director::getInstance()->getVisibleSize();
 	auto origin = Director::getInstance()->getVisibleOrigin();
-<<<<<<< Updated upstream
-	auto background = DrawNode::create();
-	background->drawSolidRect(origin, winSize, cocos2d::Color4F(0.6, 0.6, 0.6, 1.0));
-	this->addChild(background);
-	this->addBarrel();
-	this->addBox();
-	//auto spritecache = SpriteFrameCache::getInstance();
-	//spritecache->addSpriteFramesWithFile("player.plist");
-=======
 	//设置游戏背景
 	auto background = Sprite::create("background.png");
 	if (background) {
@@ -68,10 +59,13 @@ bool MainScene::init()
 		background->setScale(1.0f);
 		this->addChild(background);
 	}
+	background->setGlobalZOrder(-1);	//显示在最下层
+
+	//渲染顺序的调度器
+	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::set_z_oder));
 	
 	//玩家初始化
->>>>>>> Stashed changes
-	_player = player::create("UP_02.png");
+	_player = player::create("DO_02.png");
 	_player->setPosition(Vec2(winSize.width * 0.1, winSize.height * 0.5));
 	_player->init();
 	_player->change_weapon(1);
@@ -81,24 +75,19 @@ bool MainScene::init()
 	_player->setPhysicsBody(physicsBody);
 	_player->setTag(PLAYER_TAG);
 	this->addChild(_player);
-<<<<<<< Updated upstream
-	//renew the blood timely
-	schedule(CC_SCHEDULE_SELECTOR(MainScene::scheduleBlood), 0.1f);  //renew the display of the blood
-	schedule(CC_SCHEDULE_SELECTOR(MainScene::addhp), 1.0f);//add hp every 1s
-	
-=======
 	this->addBarrel(Vec2(50, 50));
 	this->addBox();
 
 	this->addBigMonster(0);
 
-	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::monster_move), 1.0, -1, 0);
+	//僵尸的移动和攻击调度器
+	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::monster_move), 3.0, -1, 0);
 	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::monster_attack), 1.0, -1, 0);
+
 	//renew the blood timely
 	schedule(CC_SCHEDULE_SELECTOR(MainScene::scheduleBlood), 0.1f);  //renew the display of the blood
 	schedule(CC_SCHEDULE_SELECTOR(MainScene::addhp), 1.0f);//add hp every 1s
-	schedule(CC_SCHEDULE_SELECTOR(MainScene::always_move), 0.1f);
->>>>>>> Stashed changes
+	schedule(CC_SCHEDULE_SELECTOR(MainScene::always_move), 0.2f);
 	// detects the contaction of bullet and barrel
 	auto contactListener0 = EventListenerPhysicsContact::create();
 	contactListener0->onContactBegin = CC_CALLBACK_1(MainScene::onContactBegin_bullet_barrel, this);
@@ -116,58 +105,13 @@ bool MainScene::init()
 
     return true;
 }
-<<<<<<< Updated upstream
-=======
 //用于控制人物移动、攻击、换枪的按键回调函数
->>>>>>> Stashed changes
 bool MainScene::onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode,cocos2d::Event* event)
 {	//keyboard callbackfunction to controll the player
 	log("Key with keycode %d pressed", keyCode);
 	if (keyCode == EventKeyboard::KeyCode::KEY_W || keyCode== EventKeyboard::KeyCode::KEY_A
 		|| keyCode == EventKeyboard::KeyCode::KEY_S || keyCode == EventKeyboard::KeyCode::KEY_D) {
-<<<<<<< Updated upstream
-		auto animation = Animation::create();
-		char nameSize[20];
-		char openfile[11]="UP_0%d.png";
-		auto moveBy = MoveBy::create(0.1, Vec2(0, 5));
-		_player->set_direction(player::UP);
-		switch (keyCode)
-		{
-		case cocos2d::EventKeyboard::KeyCode::KEY_A:
-			openfile[0] = 'L';
-			openfile[1] = 'F';
-			moveBy = MoveBy::create(0.1, Vec2(-5, 0));
-			_player->set_direction(player::LEFT);
-			break;
-		case cocos2d::EventKeyboard::KeyCode::KEY_S:
-			openfile[0] = 'D';
-			openfile[1] = 'O';
-			moveBy = MoveBy::create(0.1, Vec2(0,-5));
-			_player->set_direction(player::DOWN);
-			break;
-		case cocos2d::EventKeyboard::KeyCode::KEY_D:
-			openfile[0] = 'R';
-			openfile[1] = 'I';
-			moveBy = MoveBy::create(0.1, Vec2(5, 0));
-			_player->set_direction(player::RIGHT);
-			break;
-		default:
-			break;
-		}
-		for (int i = 1; i < 3; i++) {
-			sprintf(nameSize, openfile, i);
-			animation->addSpriteFrameWithFile(nameSize);
-		}
-		animation->setDelayPerUnit(0.2f);
-		animation->setLoops(1);
-		animation->setRestoreOriginalFrame(false);
-		auto animate_up = Animate::create(animation);
-		
-		auto seq = Spawn::create(moveBy,animate_up, nullptr);
-		_player->runAction(seq);
-=======
 		player_move(keyCode);
->>>>>>> Stashed changes
 	}
 	keys[keyCode] = true;
 	if (keyCode == EventKeyboard::KeyCode::KEY_J) {
@@ -254,8 +198,6 @@ bool MainScene::onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode,cocos2d::Ev
 	}
 	return true;
 }
-<<<<<<< Updated upstream
-=======
 
 bool MainScene::onKeyReleased(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event* event) {
 	keys[keyCode] = false;
@@ -281,26 +223,30 @@ void MainScene::player_move(cocos2d::EventKeyboard::KeyCode keyCode) {
 	auto animation = Animation::create();
 	char nameSize[20];
 	char openfile[11] = "UP_0%d.png";
-	auto moveBy = MoveBy::create(0.2, Vec2(0, 10));
+
+	float distance = 20;
+	float time = 0.2;
+
+	auto moveBy = MoveBy::create(time, Vec2(0, distance));
 	_player->set_direction(player::UP);
 	switch (keyCode)
 	{
 	case cocos2d::EventKeyboard::KeyCode::KEY_A:
 		openfile[0] = 'L';
 		openfile[1] = 'F';
-		moveBy = MoveBy::create(0.2, Vec2(-10, 0));
+		moveBy = MoveBy::create(time, Vec2(-distance, 0));
 		_player->set_direction(player::LEFT);
 		break;
 	case cocos2d::EventKeyboard::KeyCode::KEY_S:
 		openfile[0] = 'D';
 		openfile[1] = 'O';
-		moveBy = MoveBy::create(0.2, Vec2(0, -10));
+		moveBy = MoveBy::create(time, Vec2(0, -distance));
 		_player->set_direction(player::DOWN);
 		break;
 	case cocos2d::EventKeyboard::KeyCode::KEY_D:
 		openfile[0] = 'R';
 		openfile[1] = 'I';
-		moveBy = MoveBy::create(0.2, Vec2(10, 0));
+		moveBy = MoveBy::create(time, Vec2(distance, 0));
 		_player->set_direction(player::RIGHT);
 		break;
 	default:
@@ -310,7 +256,7 @@ void MainScene::player_move(cocos2d::EventKeyboard::KeyCode keyCode) {
 		sprintf(nameSize, openfile, i);
 		animation->addSpriteFrameWithFile(nameSize);
 	}
-	animation->setDelayPerUnit(0.2f);
+	animation->setDelayPerUnit(0.1f);
 	animation->setLoops(1);
 	animation->setRestoreOriginalFrame(false);
 	auto animate_up = Animate::create(animation);
@@ -318,7 +264,7 @@ void MainScene::player_move(cocos2d::EventKeyboard::KeyCode keyCode) {
 	auto seq = Spawn::create(moveBy, animate_up, nullptr);
 	_player->runAction(seq);
 }
-//用于控制人物移动、攻击、换枪的按键回调函数
+//换枪的动画
 void MainScene::change_weapon_animation(const std::string& weapon_name,bool out_of_bullet) {
 	auto change_label = cocos2d::Label::createWithSystemFont("change:"+weapon_name, "Arial", 20);
 	if (out_of_bullet)
@@ -331,7 +277,6 @@ void MainScene::change_weapon_animation(const std::string& weapon_name,bool out_
 	change_label->runAction(Sequence::create(actionMove, actionRemove, nullptr));
 }
 
->>>>>>> Stashed changes
 void MainScene::scheduleBlood(float delta) {
 	auto progress = (ProgressTimer*)_player->getChildByTag(1);
 	
@@ -354,11 +299,7 @@ void MainScene::addBox() {
 	// Add Box's physicsBody
 	this->addChild(Box);
 }
-<<<<<<< Updated upstream
-void MainScene::addBarrel() {
-=======
 void MainScene::addBarrel(const cocos2d::Vec2& s) {
->>>>>>> Stashed changes
 	auto Barrel = Sprite::create("barrel.png");
 	// Add Barrel
 	auto BarrelContentSize = Barrel->getContentSize();
@@ -459,8 +400,6 @@ bool MainScene::onContactBegin_player_box(cocos2d::PhysicsContact& contact) {
 	return true;
 }
 
-<<<<<<< Updated upstream
-=======
 //添加boss僵尸的方法 	birthpoint: 0->上  1->下  2->左   3->右
 void MainScene::addBigMonster(int birth_point) {
 	auto boss = BigMonster::create("Boss_DO_01.png");
@@ -493,6 +432,23 @@ void MainScene::addBigMonster(int birth_point) {
 
 }
 
+//对所有项目进行渲染顺序的调整，解决覆盖问题，用于调度器
+void MainScene::set_z_oder(float dt){
+	//_player->setLocalZOrder(get_z_odre(_player));
+	auto all_children = getChildren();
+	for (auto k : all_children) {
+		k->setLocalZOrder(get_z_odre(k));
+	}
+	
+}
+
+int MainScene::get_z_odre(cocos2d::Node* spr){
+	auto p = spr->getPosition();
+	int ry = 800*1024 - p.y*1024;
+	int x = p.x;
+	return ry+x;
+}
+
 //僵尸移动的调度器
 void MainScene::monster_move(float dt) {
 	auto destination = _player->getPosition();
@@ -520,5 +476,4 @@ void MainScene::monster_attack(float dt) {
 
 }
 
->>>>>>> Stashed changes
 

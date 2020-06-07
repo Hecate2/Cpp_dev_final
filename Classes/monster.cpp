@@ -40,11 +40,12 @@ int getdirection(cocos2d::Vec2 diff){
 
 void BigMonster::move(int dir) {
 	//0->上  1->下  2->左   3->右
-	int speed = 100;
-	auto move_down = cocos2d::MoveBy::create(1, cocos2d::Vec2(0, -speed));
-	auto move_up = cocos2d::MoveBy::create(1, cocos2d::Vec2(0, speed));
-	auto move_right = cocos2d::MoveBy::create(1, cocos2d::Vec2(speed, 0));
-	auto move_left = cocos2d::MoveBy::create(1, cocos2d::Vec2(-speed, 0));
+	int distance = 80;
+	float time = 3;
+	auto move_down = cocos2d::MoveBy::create(time, cocos2d::Vec2(0, -distance));
+	auto move_up = cocos2d::MoveBy::create(time, cocos2d::Vec2(0, distance));
+	auto move_right = cocos2d::MoveBy::create(time, cocos2d::Vec2(distance, 0));
+	auto move_left = cocos2d::MoveBy::create(time, cocos2d::Vec2(-distance, 0));
 	auto moveby = move_up;
 	//移动
 	switch (dir) {
@@ -75,8 +76,8 @@ void BigMonster::move(int dir) {
 	}
 	//设置属性
 	animation->setRestoreOriginalFrame(false); //还原第一帧
-	animation->setDelayPerUnit(0.2);     //单位帧间隔
-	animation->setLoops(4);                  //-1无限循环
+	animation->setDelayPerUnit(0.5);     //单位帧间隔
+	animation->setLoops(3);                  //-1无限循环
 	//创建动画
 	auto animate = cocos2d::Animate::create(animation);
 
@@ -85,6 +86,34 @@ void BigMonster::move(int dir) {
 }
 
 void BigMonster::attack(cocos2d::Vec2 diff) {
+	//僵尸朝向攻击的方向
+	int dir = getdirection(diff);
+	//相应的移动动画
+	auto animation = cocos2d::Animation::create();
+	//添加图片资源
+	char openfile[16] = "Boss_UP_0%d.png";
+	switch (dir) {
+	case 0:break;
+	case 1:openfile[5] = 'D'; openfile[6] = 'O'; break;
+	case 2:openfile[5] = 'L'; openfile[6] = 'F'; break;
+	case 3:openfile[5] = 'R'; openfile[6] = 'I'; break;
+	default:break;
+	}
+	for (int i = 1; i <= 1; i++) {
+		char str[50];
+		sprintf(str, openfile, i);
+		animation->cocos2d::Animation::addSpriteFrameWithFile(str);
+	}
+	//设置属性
+	animation->setRestoreOriginalFrame(false); //还原第一帧
+	animation->setDelayPerUnit(0.5);     //单位帧间隔
+	animation->setLoops(0);                  //静止的图片
+	//创建动画
+	auto animate = cocos2d::Animate::create(animation);
+	auto seq = cocos2d::Spawn::create(animate, nullptr);
+	this->runAction(seq);
+	
+	
 	//创建火球
 	auto fireball = Sprite::create("fireball.png");
 	fireball->setPosition(cocos2d::Vec2(75,75));

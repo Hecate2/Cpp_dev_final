@@ -39,13 +39,6 @@ public:
 	bool onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact);
     static cocos2d::Scene* scene();
 	bool onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event* event);
-<<<<<<< Updated upstream
-    void menuCloseCallback(Ref* sender);
-	void scheduleBlood(float delta);
-	void addhp(float delta);
-	void addBarrel();
-	void addBox();
-=======
 	bool onKeyReleased(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event* event);
 	//Direction Judgedirection(const Vec2& mon_pos);
     void menuCloseCallback(Ref* sender);
@@ -57,22 +50,21 @@ public:
 	void change_weapon_animation(const std::string& weapon_name, bool out_of_bullet = false);
 	void player_move(cocos2d::EventKeyboard::KeyCode keyCode);
 	//void mov_monsters(float delta);
->>>>>>> Stashed changes
 	bool onContactBegin_player_box(cocos2d::PhysicsContact& contact);
     // implement the "static create()" method manually
 
-	void monster_move(float dt);    //½©Ê¬ÒÆ¶¯µÄµ÷¶ÈÆ÷º¯Êı
-	void monster_attack(float dt);  //½©Ê¬¹¥»÷µÄµ÷¶ÈÆ÷º¯Êı
-	void addBigMonster(int birth_point);        //Ìí¼Ó½©Ê¬£¬²ÎÊıÎª³öÉúµØ
+	void monster_move(float dt);    //ç”¨äºåƒµå°¸ç§»åŠ¨è°ƒåº¦å™¨
+	void monster_attack(float dt);  //ç”¨äºåƒµå°¸æ”»å‡»è°ƒåº¦å™¨
+	void addBigMonster(int birth_point);        //å¢åŠ ä¸€ä¸ªboss
+    void set_z_oder(float dt);                          //å¯¹æ‰€æœ‰é¡¹ç›®è¿›è¡Œæ¸²æŸ“é¡ºåºçš„è°ƒæ•´ï¼Œè§£å†³è¦†ç›–é—®é¢˜
+    int get_z_odre(cocos2d::Node* spr);
+
     CREATE_FUNC(MainScene);
 private:
 	player* _player;
-<<<<<<< Updated upstream
-=======
 	int score=0;
 	std::map<cocos2d::EventKeyboard::KeyCode, bool> keys;
 	std::vector<BigMonster*> _BigMonster;
->>>>>>> Stashed changes
 };
 
 #endif // __HELLOWORLD_SCENE_H__
