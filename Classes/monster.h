@@ -8,8 +8,9 @@ class Monster :public cocos2d::Sprite {
 public:
 	virtual void move(int dir)=0;
 	virtual void attack(cocos2d::Vec2 diff) =0;	//攻击函数
-private:
-	int hp = 100;
+	virtual void under_attack(cocos2d::Vec2 diff) = 0;	//被攻击函数
+	virtual void death() = 0;
+	int hp;
 };
 
 //Boss
@@ -18,8 +19,21 @@ public:
 	static BigMonster* BigMonster::create(const std::string& filename);
 	void move(int dir);
 	void attack(cocos2d::Vec2 diff);
-
+	void under_attack(cocos2d::Vec2 diff);
+	void death();
+	bool is_under_attack = false;
+	int hp = 300;
 };
 
 
 //小怪
+class SmallMonster :public Monster {
+public:
+	static SmallMonster* SmallMonster::create(const std::string& filename);
+	void move(int dir);
+	void attack(cocos2d::Vec2 diff);
+	void under_attack(cocos2d::Vec2 diff);
+	void death();
+	bool is_under_attack = false;
+	int hp = 100;
+};

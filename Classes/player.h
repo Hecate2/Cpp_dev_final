@@ -76,10 +76,11 @@ public:
 			}
 		}
 	}
+	int hp = 100;
 	virtual bool init() override;
 private:
 	Direction Curr_Dir = UP;
-	int hp = 100;
+	
 	weapon* current_weapon;
 	cocos2d::Label* current_weapon_label;
 	std::vector<weapon> weapon_store;

@@ -36,7 +36,6 @@ public:
 	enum Direction { UP, DOWN, LEFT, RIGHT };
 	//std::vector<Sprite> monster_group;
     virtual bool init() override;
-	bool onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact);
     static cocos2d::Scene* scene();
 	bool onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event* event);
 	bool onKeyReleased(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event* event);
@@ -46,16 +45,21 @@ public:
 	void addhp(float delta);
 	void always_move(float delta);
 	void addBarrel(const cocos2d::Vec2& s);
-	void addBox();
+	void addBox(cocos2d::Vec2 pos);
 	void change_weapon_animation(const std::string& weapon_name, bool out_of_bullet = false);
 	void player_move(cocos2d::EventKeyboard::KeyCode keyCode);
 	//void mov_monsters(float delta);
 	bool onContactBegin_player_box(cocos2d::PhysicsContact& contact);
+    bool onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact);
+    bool onContactBegin_player_fireball(cocos2d::PhysicsContact& contact);
+    bool onContactBegin_bullet_monster(cocos2d::PhysicsContact& contact);
     // implement the "static create()" method manually
 
 	void monster_move(float dt);    //用于僵尸移动调度器
 	void monster_attack(float dt);  //用于僵尸攻击调度器
+    void monster_death(float dt);  //用于僵尸死亡调度器
 	void addBigMonster(int birth_point);        //增加一个boss
+    void addSmallMonster(int birth_point);        //增加一个boss
     void set_z_oder(float dt);                          //对所有项目进行渲染顺序的调整，解决覆盖问题
     int get_z_odre(cocos2d::Node* spr);
 
@@ -65,6 +69,7 @@ private:
 	int score=0;
 	std::map<cocos2d::EventKeyboard::KeyCode, bool> keys;
 	std::vector<BigMonster*> _BigMonster;
+    std::vector<SmallMonster*> _SmallMonster;
 };
 
 #endif // __HELLOWORLD_SCENE_H__
