@@ -55,7 +55,7 @@ public:
 	void addBarrel(const cocos2d::Vec2& s);
 	void addBox();
 	void change_weapon_animation(const std::string& weapon_name, bool out_of_bullet = false);
-	void player_move(cocos2d::EventKeyboard::KeyCode keyCode);
+	void player_attack();
 	//void mov_monsters(float delta);
 >>>>>>> Stashed changes
 	bool onContactBegin_player_box(cocos2d::PhysicsContact& contact);
@@ -72,6 +72,11 @@ private:
 	int score=0;
 	std::map<cocos2d::EventKeyboard::KeyCode, bool> keys;
 	std::vector<BigMonster*> _BigMonster;
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+    std::vector<SmallMonster*> _SmallMonster;
+	cocos2d::Label* current_score_label;
 >>>>>>> Stashed changes
 };
 
