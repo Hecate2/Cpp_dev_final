@@ -30,6 +30,10 @@ USING_NS_CC;
 #define BULLET_TAG 10
 #define BARREL_TAG 8
 #define PLAYER_TAG 2
+#define FIREBALL_TAG 11
+#define BOSS_TAG 12
+#define SMALL_TAG 13
+#define NOR_MONSTER_TAG 15
 
 Scene* MainScene::scene()
 {
@@ -50,23 +54,11 @@ bool MainScene::init()
 	{
 		return false;
 	}
-<<<<<<< Updated upstream
-=======
 	getPhysicsWorld();
 	getPhysicsWorld()->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
 	//窗口尺寸和原点
->>>>>>> Stashed changes
 	auto winSize = Director::getInstance()->getVisibleSize();
 	auto origin = Director::getInstance()->getVisibleOrigin();
-<<<<<<< Updated upstream
-	auto background = DrawNode::create();
-	background->drawSolidRect(origin, winSize, cocos2d::Color4F(0.6, 0.6, 0.6, 1.0));
-	this->addChild(background);
-	this->addBarrel();
-	this->addBox();
-	//auto spritecache = SpriteFrameCache::getInstance();
-	//spritecache->addSpriteFramesWithFile("player.plist");
-=======
 	//设置游戏背景
 	auto background = Sprite::create("background.png");
 	if (background) {
@@ -74,57 +66,35 @@ bool MainScene::init()
 		background->setScale(1.0f);
 		this->addChild(background);
 	}
-<<<<<<< Updated upstream
-=======
 	background->setGlobalZOrder(-1);	//显示在最下层
-	current_score_label = Label::createWithTTF("Score:0000", "score.ttf", 24);
+
+	current_score_label = Label::createWithTTF("Score:0000", "fonts/arial.ttf", 24);
 	current_score_label->setPosition(Vec2(winSize.width * 0.5, winSize.height*0.9));
 	this->addChild(current_score_label);
 	//渲染顺序的调度器
 	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::set_z_oder));
->>>>>>> Stashed changes
 	
 	//玩家初始化
->>>>>>> Stashed changes
-	_player = player::create("UP_02.png");
+	_player = player::create("DO_02.png");
 	_player->setPosition(Vec2(winSize.width * 0.1, winSize.height * 0.5));
 	_player->init();
 	_player->change_weapon(1);
-	auto physicsBody = PhysicsBody::createBox(_player->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
+	//玩家的物理引擎
+	auto physicsBody = PhysicsBody::createBox(_player->getContentSize()/3, PhysicsMaterial(0.0f, 0.0f, 0.0f));
 	physicsBody->setDynamic(false);
 	physicsBody->setContactTestBitmask(0xFFFFFFFF);
 	_player->setPhysicsBody(physicsBody);
-<<<<<<< Updated upstream
-	_player->setTag(PLAYER_TAG);
-	this->addChild(_player);
-<<<<<<< Updated upstream
-	//renew the blood timely
-	schedule(CC_SCHEDULE_SELECTOR(MainScene::scheduleBlood), 0.1f);  //renew the display of the blood
-	schedule(CC_SCHEDULE_SELECTOR(MainScene::addhp), 1.0f);//add hp every 1s
-	
-=======
-	this->addBarrel(Vec2(50, 50));
-	this->addBox();
-
-	this->addBigMonster(0);
-
-	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::monster_move), 1.0, -1, 0);
-	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::monster_attack), 1.0, -1, 0);
-	//renew the blood timely
-	schedule(CC_SCHEDULE_SELECTOR(MainScene::scheduleBlood), 0.1f);  //renew the display of the blood
-	schedule(CC_SCHEDULE_SELECTOR(MainScene::addhp), 1.0f);//add hp every 1s
-	schedule(CC_SCHEDULE_SELECTOR(MainScene::always_move), 0.1f);
->>>>>>> Stashed changes
-	// detects the contaction of bullet and barrel
-=======
 	_player->setTag(PLAYER_TAG);//设立标签
 	this->addChild(_player); //添加进场景
-	//添加油漆桶，箱子和大怪物
+	
+
+    //添加油漆桶，箱子和大怪物
 	this->addBarrel(Vec2(50, 50));
 	this->addBox(Vec2(300, 350));
-	this->addBigMonster(0);
+	this->addBigMonster(2);
 	for (int i = 0; i < 10; i++) {
 		this->addSmallMonster(1);
+		this->addSmallMonster(0);
 	}
 	//僵尸的移动和攻击调度器和死亡
 	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::monster_move), 3.0, -1, 0);
@@ -140,7 +110,6 @@ bool MainScene::init()
 	
 	//碰撞检测
 	// 子弹和油漆桶
->>>>>>> Stashed changes
 	auto contactListener0 = EventListenerPhysicsContact::create();
 	contactListener0->onContactBegin = CC_CALLBACK_1(MainScene::onContactBegin_bullet_barrel, this);
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(contactListener0, this);
@@ -148,6 +117,14 @@ bool MainScene::init()
 	auto contactListener1 = EventListenerPhysicsContact::create();
 	contactListener1->onContactBegin = CC_CALLBACK_1(MainScene::onContactBegin_player_box, this);
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(contactListener1, this);
+	//火球和人物
+	auto contactListener2 = EventListenerPhysicsContact::create();
+	contactListener2->onContactBegin = CC_CALLBACK_1(MainScene::onContactBegin_player_fireball, this);
+	_eventDispatcher->addEventListenerWithSceneGraphPriority(contactListener2, this);
+	//子弹和僵尸
+	auto contactListener3 = EventListenerPhysicsContact::create();
+	contactListener3->onContactBegin = CC_CALLBACK_1(MainScene::onContactBegin_bullet_monster, this);
+	_eventDispatcher->addEventListenerWithSceneGraphPriority(contactListener3, this);
 
 	// 键盘回调事件
 	auto listener = EventListenerKeyboard::create();
@@ -157,128 +134,18 @@ bool MainScene::init()
 
     return true;
 }
-<<<<<<< Updated upstream
-=======
 //用于控制人物移动、攻击、换枪的按键回调函数
->>>>>>> Stashed changes
 bool MainScene::onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode,cocos2d::Event* event)
 {	//keyboard callbackfunction to controll the player
 	log("Key with keycode %d pressed", keyCode);
 	//控制人物移动
 	if (keyCode == EventKeyboard::KeyCode::KEY_W || keyCode== EventKeyboard::KeyCode::KEY_A
 		|| keyCode == EventKeyboard::KeyCode::KEY_S || keyCode == EventKeyboard::KeyCode::KEY_D) {
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-		auto animation = Animation::create();
-		char nameSize[20];
-		char openfile[11]="UP_0%d.png";
-		auto moveBy = MoveBy::create(0.1, Vec2(0, 5));
-		_player->set_direction(player::UP);
-		switch (keyCode)
-		{
-		case cocos2d::EventKeyboard::KeyCode::KEY_A:
-			openfile[0] = 'L';
-			openfile[1] = 'F';
-			moveBy = MoveBy::create(0.1, Vec2(-5, 0));
-			_player->set_direction(player::LEFT);
-			break;
-		case cocos2d::EventKeyboard::KeyCode::KEY_S:
-			openfile[0] = 'D';
-			openfile[1] = 'O';
-			moveBy = MoveBy::create(0.1, Vec2(0,-5));
-			_player->set_direction(player::DOWN);
-			break;
-		case cocos2d::EventKeyboard::KeyCode::KEY_D:
-			openfile[0] = 'R';
-			openfile[1] = 'I';
-			moveBy = MoveBy::create(0.1, Vec2(5, 0));
-			_player->set_direction(player::RIGHT);
-			break;
-		default:
-			break;
-		}
-		for (int i = 1; i < 3; i++) {
-			sprintf(nameSize, openfile, i);
-			animation->addSpriteFrameWithFile(nameSize);
-		}
-		animation->setDelayPerUnit(0.2f);
-		animation->setLoops(1);
-		animation->setRestoreOriginalFrame(false);
-		auto animate_up = Animate::create(animation);
-		
-		auto seq = Spawn::create(moveBy,animate_up, nullptr);
-		_player->runAction(seq);
-=======
-		player_move(keyCode);
->>>>>>> Stashed changes
-	}
-	keys[keyCode] = true;
-	if (keyCode == EventKeyboard::KeyCode::KEY_J) {
-		if (_player->Is_out_of_bullet()) {
-			change_weapon_animation((_player->get_weapon_attribute()).weapon_name,true);
-			return true;
-		}
-		if ((_player->get_weapon_attribute()).weapon_name == "barrel") {
-			int tmp_barrel_distance=50;
-			Vec2 shootAmount;
-			switch (_player->get_direction()) {
-			case player::UP:
-				shootAmount = Vec2(0, tmp_barrel_distance);
-				break;
-			case player::DOWN:
-				shootAmount = Vec2(0, -tmp_barrel_distance);
-				break;
-			case player::LEFT:
-				shootAmount = Vec2(-tmp_barrel_distance, 0);
-				break;
-			case player::RIGHT:
-				shootAmount = Vec2(tmp_barrel_distance, 0);
-				break;
-			}
-			addBarrel(_player->getPosition()+shootAmount);
-			_player->decrease_weapon_num();
-			_player->renew_display_num();
-			return true;
-		}
-		auto bullet = Sprite::create("bullet.png");
-		bullet->setPosition(_player->getPosition());
-		//add physics
-		auto physicsBody = PhysicsBody::createBox(bullet->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
-		physicsBody->setDynamic(false);
-		physicsBody->setContactTestBitmask(0xFFFFFFFF);
-		bullet->setPhysicsBody(physicsBody);
-		bullet->setTag(10);
-		this->addChild(bullet);
-		Vec2 shootAmount;
-		auto tmp_weapon = _player->get_weapon_attribute();
-		switch (_player->get_direction()) {
-		case player::UP:
-			shootAmount = Vec2(0, tmp_weapon.distance);
-			break;
-		case player::DOWN:
-			shootAmount = Vec2(0, -tmp_weapon.distance);
-			break;
-		case player::LEFT:
-			shootAmount = Vec2(-tmp_weapon.distance,0);
-			break;
-		case player::RIGHT:
-			shootAmount = Vec2(tmp_weapon.distance,0);
-			break;
-		}
-		_player->decrease_weapon_num();
-		_player->renew_display_num();
-		auto realDest = shootAmount + bullet->getPosition();
-		int normal_speed = 5;
-		auto actionMove = MoveTo::create(0.5f*normal_speed/tmp_weapon.speed, realDest);
-		auto actionRemove = RemoveSelf::create();
-		bullet->runAction(Sequence::create(actionMove, actionRemove, nullptr));
-=======
 		_player->player_move(keyCode);
 	}
 	keys[keyCode] = true;
 	if (keyCode == EventKeyboard::KeyCode::KEY_J) {
 		player_attack();
->>>>>>> Stashed changes
 	}
 
 	if (keyCode == EventKeyboard::KeyCode::KEY_1 || keyCode == EventKeyboard::KeyCode::KEY_2 ||
@@ -304,11 +171,6 @@ bool MainScene::onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode,cocos2d::Ev
 	}
 	return true;
 }
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-
-=======
 void MainScene::player_attack() {
 	//当前武器子弹耗尽
 	if (_player->Is_out_of_bullet()) {
@@ -373,7 +235,6 @@ void MainScene::player_attack() {
 	auto actionRemove = RemoveSelf::create();
 	bullet->runAction(Sequence::create(actionMove, actionRemove, nullptr));
 }
->>>>>>> Stashed changes
 bool MainScene::onKeyReleased(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event* event) {
 	keys[keyCode] = false;
 	return true;
@@ -394,53 +255,8 @@ void MainScene::always_move(float delta) {//用于长时间按的调度函数
 	}
 	
 }
-<<<<<<< Updated upstream
-void MainScene::player_move(cocos2d::EventKeyboard::KeyCode keyCode) {
-	auto animation = Animation::create();
-	char nameSize[20];
-	char openfile[11] = "UP_0%d.png";
-	auto moveBy = MoveBy::create(0.2, Vec2(0, 10));
-	_player->set_direction(player::UP);
-	switch (keyCode)
-	{
-	case cocos2d::EventKeyboard::KeyCode::KEY_A:
-		openfile[0] = 'L';
-		openfile[1] = 'F';
-		moveBy = MoveBy::create(0.2, Vec2(-10, 0));
-		_player->set_direction(player::LEFT);
-		break;
-	case cocos2d::EventKeyboard::KeyCode::KEY_S:
-		openfile[0] = 'D';
-		openfile[1] = 'O';
-		moveBy = MoveBy::create(0.2, Vec2(0, -10));
-		_player->set_direction(player::DOWN);
-		break;
-	case cocos2d::EventKeyboard::KeyCode::KEY_D:
-		openfile[0] = 'R';
-		openfile[1] = 'I';
-		moveBy = MoveBy::create(0.2, Vec2(10, 0));
-		_player->set_direction(player::RIGHT);
-		break;
-	default:
-		break;
-	}
-	for (int i = 1; i < 3; i++) {
-		sprintf(nameSize, openfile, i);
-		animation->addSpriteFrameWithFile(nameSize);
-	}
-	animation->setDelayPerUnit(0.2f);
-	animation->setLoops(1);
-	animation->setRestoreOriginalFrame(false);
-	auto animate_up = Animate::create(animation);
-
-	auto seq = Spawn::create(moveBy, animate_up, nullptr);
-	_player->runAction(seq);
-}
-//用于控制人物移动、攻击、换枪的按键回调函数
-=======
 
 //换枪的动画
->>>>>>> Stashed changes
 void MainScene::change_weapon_animation(const std::string& weapon_name,bool out_of_bullet) {
 	auto change_label = cocos2d::Label::createWithSystemFont("change:"+weapon_name, "Arial", 20);
 	if (out_of_bullet)
@@ -452,12 +268,7 @@ void MainScene::change_weapon_animation(const std::string& weapon_name,bool out_
 	auto actionRemove = RemoveSelf::create();
 	change_label->runAction(Sequence::create(actionMove, actionRemove, nullptr));
 }
-<<<<<<< Updated upstream
-
->>>>>>> Stashed changes
-=======
 //血条显示更新
->>>>>>> Stashed changes
 void MainScene::scheduleBlood(float delta) {
 	auto progress = (ProgressTimer*)_player->getChildByTag(1);
 	
@@ -466,18 +277,14 @@ void MainScene::scheduleBlood(float delta) {
 		this->unschedule(CC_SCHEDULE_SELECTOR(MainScene::scheduleBlood));
 	}
 }
-<<<<<<< Updated upstream
-void MainScene::addBox() {
-=======
 
 void MainScene::addBox(cocos2d::Vec2 pos) {
->>>>>>> Stashed changes
 	auto Box = Sprite::create("box.png");
 	// Add Box
 	auto BoxContentSize = Box->getContentSize();
-	Box->setPosition(Vec2(100, 100));
+	Box->setPosition(pos);
 	// Add Box's physicsBody
-	auto physicsBody = PhysicsBody::createBox(Box->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
+	auto physicsBody = PhysicsBody::createBox(Box->getContentSize()/2, PhysicsMaterial(0.0f, 0.0f, 0.0f));
 	physicsBody->setDynamic(false);
 	physicsBody->setContactTestBitmask(0xFFFFFFFF);
 	Box->setPhysicsBody(physicsBody);
@@ -485,17 +292,13 @@ void MainScene::addBox(cocos2d::Vec2 pos) {
 	// Add Box's physicsBody
 	this->addChild(Box);
 }
-<<<<<<< Updated upstream
-void MainScene::addBarrel() {
-=======
 void MainScene::addBarrel(const cocos2d::Vec2& s) {
->>>>>>> Stashed changes
 	auto Barrel = Sprite::create("barrel.png");
 	// Add Barrel
 	auto BarrelContentSize = Barrel->getContentSize();
 	Barrel->setPosition(s);
 	// Add Barrel's physicsBody
-	auto physicsBody = PhysicsBody::createBox(Barrel->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
+	auto physicsBody = PhysicsBody::createBox(Barrel->getContentSize()/2, PhysicsMaterial(0.0f, 0.0f, 0.0f));
 	physicsBody->setDynamic(false);
 	physicsBody->setContactTestBitmask(0xFFFFFFFF);
 	Barrel->setPhysicsBody(physicsBody);
@@ -524,6 +327,7 @@ bool MainScene::onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact) {
 				_player->decrease_hp_barrel();
 			}
 			nodeA->removeFromParentAndCleanup(true);
+			nodeB->removeFromParentAndCleanup(true);
 		}
 		else if (nodeB->getTag() == BARREL_TAG && nodeA->getTag() ==BULLET_TAG)
 		{
@@ -531,14 +335,13 @@ bool MainScene::onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact) {
 			if (abs(_player->getPosition().x - position_tmp.x)+abs(_player->getPosition().y - position_tmp.y) < 500) {
 				_player->decrease_hp_barrel();
 			}
+			nodeA->removeFromParentAndCleanup(true);
 			nodeB->removeFromParentAndCleanup(true);
 		}
 	}
 	return true;
 }
 
-<<<<<<< Updated upstream
-=======
 bool MainScene::onContactBegin_player_fireball(cocos2d::PhysicsContact& contact){
 	auto nodeA = contact.getShapeA()->getBody()->getNode();
 	auto nodeB = contact.getShapeB()->getBody()->getNode();
@@ -634,7 +437,6 @@ bool MainScene::onContactBegin_bullet_monster(cocos2d::PhysicsContact& contact){
 	return true;
 }
 
->>>>>>> Stashed changes
 bool MainScene::onContactBegin_player_box(cocos2d::PhysicsContact& contact) {
 	auto nodeA = contact.getShapeA()->getBody()->getNode();
 	auto nodeB = contact.getShapeB()->getBody()->getNode();
@@ -661,49 +463,127 @@ bool MainScene::onContactBegin_player_box(cocos2d::PhysicsContact& contact) {
 	return true;
 }
 
-<<<<<<< Updated upstream
-=======
 //添加boss僵尸的方法 	birthpoint: 0->上  1->下  2->左   3->右
 void MainScene::addBigMonster(int birth_point) {
 	auto boss = BigMonster::create("Boss_DO_01.png");
+	//物理引擎
+	auto physicsBody = PhysicsBody::createBox(boss->getContentSize() / 3, PhysicsMaterial(0.0f, 0.0f, 0.0f));
+	physicsBody->setDynamic(false);
+	physicsBody->setContactTestBitmask(0xFFFFFFFF);
+	boss->setPhysicsBody(physicsBody);
+	boss->setTag(BOSS_TAG);
 	_BigMonster.push_back(boss);
+
+	//随机波动
+	std::random_device rd;
+	auto eng = std::default_random_engine{ rd() };
+	auto dis = std::uniform_int_distribution<>{ -40,40 };
+	auto rand = Vec2(dis(eng), dis(eng));
 	//根据出生地选择初始的位置  768*1024
 	switch (birth_point) {
 	case 0: {
-		boss->setPosition(Vec2(512, 786));
+		boss->setPosition(Vec2(512, 786) + rand);
 		break;
 	}
 	case 1: {
-		boss->setPosition(Vec2(512, 0));
+		boss->setPosition(Vec2(512, 0) + rand);
 		break;
 	}
 	case 2: {
-		boss->setPosition(Vec2(0, 393));
+		boss->setPosition(Vec2(0, 393) + rand);
 		break;
 	}
 	case 3: {
-		boss->setPosition(Vec2(1024, 393));
+		boss->setPosition(Vec2(1024, 393) + rand);
 		break;
 	}
 	default: {
-		boss->setPosition(Vec2(300, 300));
+		boss->setPosition(Vec2(300, 300) + rand);
 		break;
 	}
 	}
 
 	this->addChild(boss);
+}
 
+void MainScene::addSmallMonster(int birth_point){
+	auto boss = SmallMonster::create("0_01.png");
+	//物理引擎
+	auto physicsBody = PhysicsBody::createBox(boss->getContentSize() / 3, PhysicsMaterial(0.0f, 0.0f, 0.0f));
+	physicsBody->setDynamic(false);
+	physicsBody->setContactTestBitmask(0xFFFFFFFF);
+	boss->setPhysicsBody(physicsBody);
+	boss->setTag(SMALL_TAG);
+	_SmallMonster.push_back(boss);
+	//随机波动
+	std::random_device rd;
+	auto eng = std::default_random_engine{ rd() };
+	auto dis = std::uniform_int_distribution<>{ -40,40 };
+	auto rand = Vec2(dis(eng), dis(eng));
+	//根据出生地选择初始的位置  768*1024
+	switch (birth_point) {
+	case 0: {
+		boss->setPosition(Vec2(512, 786) + rand);
+		break;
+	}
+	case 1: {
+		boss->setPosition(Vec2(512, 0) + rand);
+		break;
+	}
+	case 2: {
+		boss->setPosition(Vec2(0, 393) + rand);
+		break;
+	}
+	case 3: {
+		boss->setPosition(Vec2(1024, 393) + rand);
+		break;
+	}
+	default: {
+		boss->setPosition(Vec2(300, 300) + rand);
+		break;
+	}
+	}
+
+	this->addChild(boss);
+}
+
+//对所有项目进行渲染顺序的调整，解决覆盖问题，用于调度器
+void MainScene::set_z_oder(float dt){
+	//_player->setLocalZOrder(get_z_odre(_player));
+	auto all_children = getChildren();
+	for (auto k : all_children) {
+		k->setLocalZOrder(get_z_odre(k));
+	}	
+}
+
+int MainScene::get_z_odre(cocos2d::Node* spr){
+	auto p = spr->getPosition();
+	int ry = 800*1024 - p.y*1024;
+	int x = p.x;
+	return ry+x;
 }
 
 //僵尸移动的调度器
 void MainScene::monster_move(float dt) {
 	auto destination = _player->getPosition();
 	for (auto k : _BigMonster) {
-		auto source = k->getPosition();
-		auto diff = destination - source;
-		if (fabs(diff.x) > 200 || fabs(diff.y) > 200) {
-			auto direction = getdirection(diff);
-			k->move(direction);
+		if (k->hp > 0) {
+			auto source = k->getPosition();
+			auto diff = destination - source;
+			if (fabs(diff.x) > 200 || fabs(diff.y) > 200) {
+				auto direction = getdirection(diff);
+				k->move(direction);
+			}
+		}
+	}
+	for (auto k : _SmallMonster) {
+		if (k->hp > 0) {
+			auto source = k->getPosition();
+			auto diff = destination - source;
+			if (fabs(diff.x) > 100 || fabs(diff.y) > 100) {
+				auto direction = getdirection(diff);
+				k->move(direction);
+			}
 		}
 	}
 
@@ -712,19 +592,27 @@ void MainScene::monster_move(float dt) {
 void MainScene::monster_attack(float dt) {
 	auto destination = _player->getPosition();
 	for (auto k : _BigMonster) {
-		auto source = k->getPosition();
-		auto diff = destination - source;
-		if (fabs(diff.x) < 200 && fabs(diff.y) < 200) {
-			auto direction = getdirection(diff);
-			k->attack(diff);
+		if (k->hp > 0) {
+			auto source = k->getPosition();
+			auto diff = destination - source;
+			if (fabs(diff.x) <= 200 && fabs(diff.y) <= 200) {
+				auto direction = getdirection(diff);
+				k->attack(diff);
+			}
+		}
+	}
+	for (auto k : _SmallMonster) {
+		if (k->hp > 0) {
+			auto source = k->getPosition();
+			auto diff = destination - source;
+			if (fabs(diff.x) <= 100 && fabs(diff.y) <= 100) {
+				auto direction = getdirection(diff);
+				k->attack(diff);
+			}
 		}
 	}
 
 }
-<<<<<<< Updated upstream
-
->>>>>>> Stashed changes
-=======
 //僵尸死亡调度器
 void MainScene::monster_death(float dt){
 	for (auto k : _BigMonster) {
@@ -746,5 +634,4 @@ void MainScene::monster_death(float dt){
 	_SmallMonster.erase(remove_if(_SmallMonster.begin(), _SmallMonster.end(),
 		[](SmallMonster* x) { return (x->hp <= 0); }), _SmallMonster.end());
 }
->>>>>>> Stashed changes
 

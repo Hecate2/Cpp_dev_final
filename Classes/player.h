@@ -76,12 +76,6 @@ public:
 			}
 		}
 	}
-<<<<<<< Updated upstream
-	virtual bool init() override;
-private:
-	Direction Curr_Dir = UP;
-	int hp = 100;
-=======
 	int hp = 100;
 	void player_move(cocos2d::EventKeyboard::KeyCode keyCode);
 	void Is_under_attack(int dir);
@@ -89,7 +83,6 @@ private:
 private:
 	Direction Curr_Dir = UP;
 	bool under_attack = false;
->>>>>>> Stashed changes
 	weapon* current_weapon;
 	cocos2d::Label* current_weapon_label;
 	std::vector<weapon> weapon_store;
