@@ -25,42 +25,41 @@
 #include "MainScene.h"
 #include "AppMacros.h"
 #include "math.h"
+#include "EndScene.h"
 USING_NS_CC;
 #define BOX_TAG 7
 #define BULLET_TAG 10
 #define BARREL_TAG 8
 #define PLAYER_TAG 2
+#define FIREBALL_TAG 11
+#define BOSS_TAG 12
+#define SMALL_TAG 13
+#define NOR_MONSTER_TAG 15
 
 Scene* MainScene::scene()
 {
      return MainScene::create();
 }
 
-// on "init" you need to initialize your instance
+
 bool MainScene::init()
 {
     //////////////////////////////
-    // 1. super init first
+    // 1. 首先继承
 	if (!Scene::init())
 	{
 		return false;
 	}
-	// Initialze with Physics
+	// 物理效果初始化用于继承
 	if (!Scene::initWithPhysics())
 	{
 		return false;
 	}
+	getPhysicsWorld();
+	getPhysicsWorld()->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
+	//窗口尺寸和原点
 	auto winSize = Director::getInstance()->getVisibleSize();
 	auto origin = Director::getInstance()->getVisibleOrigin();
-<<<<<<< Updated upstream
-	auto background = DrawNode::create();
-	background->drawSolidRect(origin, winSize, cocos2d::Color4F(0.6, 0.6, 0.6, 1.0));
-	this->addChild(background);
-	this->addBarrel();
-	this->addBox();
-	//auto spritecache = SpriteFrameCache::getInstance();
-	//spritecache->addSpriteFramesWithFile("player.plist");
-=======
 	//设置游戏背景
 	auto background = Sprite::create("background.png");
 	if (background) {
@@ -68,42 +67,33 @@ bool MainScene::init()
 		background->setScale(1.0f);
 		this->addChild(background);
 	}
-<<<<<<< Updated upstream
-=======
 	background->setGlobalZOrder(-1);	//显示在最下层
-	current_score_label = Label::createWithTTF("Score:0000", "score.ttf", 24);
+	//背景音乐
+	auto backgroundAudioID = AudioEngine::play2d("sound/bk.mp3", true);
+	AudioEngine::setVolume(backgroundAudioID, 0.5);
+
+	//记分牌
+	current_score_label = Label::createWithTTF("Score:0000", "fonts/score.ttf", 24);
 	current_score_label->setPosition(Vec2(winSize.width * 0.5-120, winSize.height*0.9));
 	this->addChild(current_score_label);
-
-	current_level_label = Label::createWithTTF("level:0", "score.ttf", 24);
+	current_level_label = Label::createWithTTF("level:0", "fonts/score.ttf", 24);
 	current_level_label->setPosition(Vec2(winSize.width * 0.5+120, winSize.height * 0.9));
 	this->addChild(current_level_label);
+	current_score_label->setGlobalZOrder(1);
+	current_level_label->setGlobalZOrder(1);
 	//渲染顺序的调度器
 	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::set_z_oder));
->>>>>>> Stashed changes
 	
 	//玩家初始化
->>>>>>> Stashed changes
-	_player = player::create("UP_02.png");
+	_player = player::create("DO_02.png");
 	_player->setPosition(Vec2(winSize.width * 0.1, winSize.height * 0.5));
 	_player->init();
 	_player->change_weapon(1);
-	auto physicsBody = PhysicsBody::createBox(_player->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
+	//玩家的物理引擎
+	auto physicsBody = PhysicsBody::createBox(_player->getContentSize()/3, PhysicsMaterial(0.0f, 0.0f, 0.0f));
 	physicsBody->setDynamic(false);
 	physicsBody->setContactTestBitmask(0xFFFFFFFF);
 	_player->setPhysicsBody(physicsBody);
-<<<<<<< Updated upstream
-	_player->setTag(PLAYER_TAG);
-	this->addChild(_player);
-<<<<<<< Updated upstream
-	//renew the blood timely
-	schedule(CC_SCHEDULE_SELECTOR(MainScene::scheduleBlood), 0.1f);  //renew the display of the blood
-	schedule(CC_SCHEDULE_SELECTOR(MainScene::addhp), 1.0f);//add hp every 1s
-	
-=======
-	this->addBarrel(Vec2(50, 50));
-	this->addBox();
-=======
 	_player->setTag(PLAYER_TAG);//设立标签
 	this->addChild(_player); //添加进场景
 	//添加油漆桶，箱子和大怪物
@@ -115,27 +105,33 @@ bool MainScene::init()
 	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::monster_move), 3.0, -1, 0);
 	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::monster_attack), 1.0, -1, 0);
 	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::monster_death), 1.0, -1, 0);
->>>>>>> Stashed changes
 
-	this->addBigMonster(0);
+	//实时更新血量
+	schedule(CC_SCHEDULE_SELECTOR(MainScene::scheduleBlood), 0.1f);  //更新血条的显示
+	schedule(CC_SCHEDULE_SELECTOR(MainScene::addhp), 1.0f);//每秒钟自动回血
 
-	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::monster_move), 1.0, -1, 0);
-	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::monster_attack), 1.0, -1, 0);
-	//renew the blood timely
-	schedule(CC_SCHEDULE_SELECTOR(MainScene::scheduleBlood), 0.1f);  //renew the display of the blood
-	schedule(CC_SCHEDULE_SELECTOR(MainScene::addhp), 1.0f);//add hp every 1s
-	schedule(CC_SCHEDULE_SELECTOR(MainScene::always_move), 0.1f);
->>>>>>> Stashed changes
-	// detects the contaction of bullet and barrel
+	//人物移动调度器
+	schedule(CC_SCHEDULE_SELECTOR(MainScene::always_move), 0.2f);
+	
+	//碰撞检测
+	// 子弹和油漆桶
 	auto contactListener0 = EventListenerPhysicsContact::create();
 	contactListener0->onContactBegin = CC_CALLBACK_1(MainScene::onContactBegin_bullet_barrel, this);
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(contactListener0, this);
-	//detects the contaction of box and player
+	//箱子和玩家
 	auto contactListener1 = EventListenerPhysicsContact::create();
 	contactListener1->onContactBegin = CC_CALLBACK_1(MainScene::onContactBegin_player_box, this);
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(contactListener1, this);
+	//火球和人物
+	auto contactListener2 = EventListenerPhysicsContact::create();
+	contactListener2->onContactBegin = CC_CALLBACK_1(MainScene::onContactBegin_player_fireball, this);
+	_eventDispatcher->addEventListenerWithSceneGraphPriority(contactListener2, this);
+	//子弹和僵尸
+	auto contactListener3 = EventListenerPhysicsContact::create();
+	contactListener3->onContactBegin = CC_CALLBACK_1(MainScene::onContactBegin_bullet_monster, this);
+	_eventDispatcher->addEventListenerWithSceneGraphPriority(contactListener3, this);
 
-	// creating a keyboard event listener to control the player
+	// 键盘回调事件
 	auto listener = EventListenerKeyboard::create();
 	listener->onKeyPressed = CC_CALLBACK_2(MainScene::onKeyPressed, this);
 	listener->onKeyReleased = CC_CALLBACK_2(MainScene::onKeyReleased, this);
@@ -143,119 +139,18 @@ bool MainScene::init()
 
     return true;
 }
-<<<<<<< Updated upstream
-=======
 //用于控制人物移动、攻击、换枪的按键回调函数
->>>>>>> Stashed changes
 bool MainScene::onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode,cocos2d::Event* event)
 {	//keyboard callbackfunction to controll the player
 	log("Key with keycode %d pressed", keyCode);
+	//控制人物移动
 	if (keyCode == EventKeyboard::KeyCode::KEY_W || keyCode== EventKeyboard::KeyCode::KEY_A
 		|| keyCode == EventKeyboard::KeyCode::KEY_S || keyCode == EventKeyboard::KeyCode::KEY_D) {
-<<<<<<< Updated upstream
-		auto animation = Animation::create();
-		char nameSize[20];
-		char openfile[11]="UP_0%d.png";
-		auto moveBy = MoveBy::create(0.1, Vec2(0, 5));
-		_player->set_direction(player::UP);
-		switch (keyCode)
-		{
-		case cocos2d::EventKeyboard::KeyCode::KEY_A:
-			openfile[0] = 'L';
-			openfile[1] = 'F';
-			moveBy = MoveBy::create(0.1, Vec2(-5, 0));
-			_player->set_direction(player::LEFT);
-			break;
-		case cocos2d::EventKeyboard::KeyCode::KEY_S:
-			openfile[0] = 'D';
-			openfile[1] = 'O';
-			moveBy = MoveBy::create(0.1, Vec2(0,-5));
-			_player->set_direction(player::DOWN);
-			break;
-		case cocos2d::EventKeyboard::KeyCode::KEY_D:
-			openfile[0] = 'R';
-			openfile[1] = 'I';
-			moveBy = MoveBy::create(0.1, Vec2(5, 0));
-			_player->set_direction(player::RIGHT);
-			break;
-		default:
-			break;
-		}
-		for (int i = 1; i < 3; i++) {
-			sprintf(nameSize, openfile, i);
-			animation->addSpriteFrameWithFile(nameSize);
-		}
-		animation->setDelayPerUnit(0.2f);
-		animation->setLoops(1);
-		animation->setRestoreOriginalFrame(false);
-		auto animate_up = Animate::create(animation);
-		
-		auto seq = Spawn::create(moveBy,animate_up, nullptr);
-		_player->runAction(seq);
-=======
-		player_move(keyCode);
->>>>>>> Stashed changes
+		_player->player_move(keyCode);
 	}
 	keys[keyCode] = true;
 	if (keyCode == EventKeyboard::KeyCode::KEY_J) {
-		if (_player->Is_out_of_bullet()) {
-			change_weapon_animation((_player->get_weapon_attribute()).weapon_name,true);
-			return true;
-		}
-		if ((_player->get_weapon_attribute()).weapon_name == "barrel") {
-			int tmp_barrel_distance=50;
-			Vec2 shootAmount;
-			switch (_player->get_direction()) {
-			case player::UP:
-				shootAmount = Vec2(0, tmp_barrel_distance);
-				break;
-			case player::DOWN:
-				shootAmount = Vec2(0, -tmp_barrel_distance);
-				break;
-			case player::LEFT:
-				shootAmount = Vec2(-tmp_barrel_distance, 0);
-				break;
-			case player::RIGHT:
-				shootAmount = Vec2(tmp_barrel_distance, 0);
-				break;
-			}
-			addBarrel(_player->getPosition()+shootAmount);
-			_player->decrease_weapon_num();
-			_player->renew_display_num();
-			return true;
-		}
-		auto bullet = Sprite::create("bullet.png");
-		bullet->setPosition(_player->getPosition());
-		//add physics
-		auto physicsBody = PhysicsBody::createBox(bullet->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
-		physicsBody->setDynamic(false);
-		physicsBody->setContactTestBitmask(0xFFFFFFFF);
-		bullet->setPhysicsBody(physicsBody);
-		bullet->setTag(10);
-		this->addChild(bullet);
-		Vec2 shootAmount;
-		auto tmp_weapon = _player->get_weapon_attribute();
-		switch (_player->get_direction()) {
-		case player::UP:
-			shootAmount = Vec2(0, tmp_weapon.distance);
-			break;
-		case player::DOWN:
-			shootAmount = Vec2(0, -tmp_weapon.distance);
-			break;
-		case player::LEFT:
-			shootAmount = Vec2(-tmp_weapon.distance,0);
-			break;
-		case player::RIGHT:
-			shootAmount = Vec2(tmp_weapon.distance,0);
-			break;
-		}
-		_player->decrease_weapon_num();
-		_player->renew_display_num();
-		auto realDest = shootAmount + bullet->getPosition();
-		int normal_speed = 5;
-		auto actionMove = MoveTo::create(0.5f*normal_speed/tmp_weapon.speed, realDest);
-		auto actionRemove = RemoveSelf::create();
-		bullet->runAction(Sequence::create(actionMove, actionRemove, nullptr));
+		player_attack();
 	}
 
 	if (keyCode == EventKeyboard::KeyCode::KEY_1 || keyCode == EventKeyboard::KeyCode::KEY_2 ||
@@ -276,19 +171,87 @@ bool MainScene::onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode,cocos2d::Ev
 			success_change = _player->change_weapon(3);
 			break;
 		}
-		if (success_change)
+		if (success_change) {
 			change_weapon_animation((_player->get_weapon_attribute()).weapon_name);
+			auto soundchange_weapon = AudioEngine::play2d("sound/change_weapon.mp3", false);
+		}
 	}
 	return true;
 }
-<<<<<<< Updated upstream
-=======
+void MainScene::player_attack() {
+	//当前武器子弹耗尽
+	if (_player->Is_out_of_bullet()) {
+		change_weapon_animation((_player->get_weapon_attribute()).weapon_name, true);
+		return;
+	}
+	//武器声音
+	auto gun_name = (_player->get_weapon_attribute()).weapon_name;
+	attack_sound(gun_name);
 
+	//当前武器为油漆桶
+	if ((_player->get_weapon_attribute()).weapon_name == "barrel") {
+		int tmp_barrel_distance = 100;
+		Vec2 shootAmount;
+		switch (_player->get_direction()) {
+		case player::UP:
+			shootAmount = Vec2(0, tmp_barrel_distance);
+			break;
+		case player::DOWN:
+			shootAmount = Vec2(0, -tmp_barrel_distance);
+			break;
+		case player::LEFT:
+			shootAmount = Vec2(-tmp_barrel_distance, 0);
+			break;
+		case player::RIGHT:
+			shootAmount = Vec2(tmp_barrel_distance, 0);
+			break;
+		}
+		addBarrel(_player->getPosition() + shootAmount);
+		_player->decrease_weapon_num();
+		_player->renew_display_num();
+		return ;
+	}
+	//其他枪类武器时	
+	auto bullet = Sprite::create("bullet.png");
+	auto soundEffectID = AudioEngine::play2d("gameeffect.mp3", false);
+	bullet->setPosition(_player->getPosition());
+	//增加physics用于碰撞
+	auto physicsBody = PhysicsBody::createBox(bullet->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
+	physicsBody->setDynamic(false);
+	physicsBody->setContactTestBitmask(0xFFFFFFFF);
+	bullet->setPhysicsBody(physicsBody);
+	bullet->setTag(10);
+	this->addChild(bullet);
+	Vec2 shootAmount;
+	auto tmp_weapon = _player->get_weapon_attribute();
+	switch (_player->get_direction()) {
+	case player::UP:
+		shootAmount = Vec2(0, tmp_weapon.distance);
+		break;
+	case player::DOWN:
+		shootAmount = Vec2(0, -tmp_weapon.distance);
+		break;
+	case player::LEFT:
+		shootAmount = Vec2(-tmp_weapon.distance, 0);
+		break;
+	case player::RIGHT:
+		shootAmount = Vec2(tmp_weapon.distance, 0);
+		break;
+	}
+	_player->decrease_weapon_num(); //更新子弹数
+	_player->renew_display_num();//更新显示
+	//子弹的动作
+	auto realDest = shootAmount + bullet->getPosition();
+	int normal_speed = 5;
+	auto actionMove = MoveTo::create(0.5f * normal_speed / tmp_weapon.speed, realDest);
+	auto actionRemove = RemoveSelf::create();
+	bullet->runAction(Sequence::create(actionMove, actionRemove, nullptr));
+}
 bool MainScene::onKeyReleased(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event* event) {
 	keys[keyCode] = false;
 	return true;
 }
-void MainScene::always_move(float delta) {
+void MainScene::always_move(float delta) {//用于长时间按的调度函数
 	EventKeyboard::KeyCode keyCode= EventKeyboard::KeyCode::KEY_P;
 	if (keys[EventKeyboard::KeyCode::KEY_W])
 			keyCode = EventKeyboard::KeyCode::KEY_W;
@@ -300,52 +263,12 @@ void MainScene::always_move(float delta) {
 		keyCode = EventKeyboard::KeyCode::KEY_D;
 	if (keyCode == EventKeyboard::KeyCode::KEY_W || keyCode == EventKeyboard::KeyCode::KEY_A
 		|| keyCode == EventKeyboard::KeyCode::KEY_S || keyCode == EventKeyboard::KeyCode::KEY_D) {
-		player_move(keyCode);
+		_player->player_move(keyCode);
 	}
 	
 }
-void MainScene::player_move(cocos2d::EventKeyboard::KeyCode keyCode) {
-	auto animation = Animation::create();
-	char nameSize[20];
-	char openfile[11] = "UP_0%d.png";
-	auto moveBy = MoveBy::create(0.2, Vec2(0, 10));
-	_player->set_direction(player::UP);
-	switch (keyCode)
-	{
-	case cocos2d::EventKeyboard::KeyCode::KEY_A:
-		openfile[0] = 'L';
-		openfile[1] = 'F';
-		moveBy = MoveBy::create(0.2, Vec2(-10, 0));
-		_player->set_direction(player::LEFT);
-		break;
-	case cocos2d::EventKeyboard::KeyCode::KEY_S:
-		openfile[0] = 'D';
-		openfile[1] = 'O';
-		moveBy = MoveBy::create(0.2, Vec2(0, -10));
-		_player->set_direction(player::DOWN);
-		break;
-	case cocos2d::EventKeyboard::KeyCode::KEY_D:
-		openfile[0] = 'R';
-		openfile[1] = 'I';
-		moveBy = MoveBy::create(0.2, Vec2(10, 0));
-		_player->set_direction(player::RIGHT);
-		break;
-	default:
-		break;
-	}
-	for (int i = 1; i < 3; i++) {
-		sprintf(nameSize, openfile, i);
-		animation->addSpriteFrameWithFile(nameSize);
-	}
-	animation->setDelayPerUnit(0.2f);
-	animation->setLoops(1);
-	animation->setRestoreOriginalFrame(false);
-	auto animate_up = Animate::create(animation);
 
-	auto seq = Spawn::create(moveBy, animate_up, nullptr);
-	_player->runAction(seq);
-}
-//用于控制人物移动、攻击、换枪的按键回调函数
+//换枪的动画
 void MainScene::change_weapon_animation(const std::string& weapon_name,bool out_of_bullet) {
 	auto change_label = cocos2d::Label::createWithSystemFont("change:"+weapon_name, "Arial", 20);
 	if (out_of_bullet)
@@ -357,8 +280,7 @@ void MainScene::change_weapon_animation(const std::string& weapon_name,bool out_
 	auto actionRemove = RemoveSelf::create();
 	change_label->runAction(Sequence::create(actionMove, actionRemove, nullptr));
 }
-
->>>>>>> Stashed changes
+//血条显示更新
 void MainScene::scheduleBlood(float delta) {
 	auto progress = (ProgressTimer*)_player->getChildByTag(1);
 	
@@ -367,13 +289,14 @@ void MainScene::scheduleBlood(float delta) {
 		this->unschedule(CC_SCHEDULE_SELECTOR(MainScene::scheduleBlood));
 	}
 }
-void MainScene::addBox() {
+
+void MainScene::addBox(cocos2d::Vec2 pos) {
 	auto Box = Sprite::create("box.png");
 	// Add Box
 	auto BoxContentSize = Box->getContentSize();
-	Box->setPosition(Vec2(100, 100));
+	Box->setPosition(pos);
 	// Add Box's physicsBody
-	auto physicsBody = PhysicsBody::createBox(Box->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
+	auto physicsBody = PhysicsBody::createBox(Box->getContentSize()/2, PhysicsMaterial(0.0f, 0.0f, 0.0f));
 	physicsBody->setDynamic(false);
 	physicsBody->setContactTestBitmask(0xFFFFFFFF);
 	Box->setPhysicsBody(physicsBody);
@@ -381,17 +304,13 @@ void MainScene::addBox() {
 	// Add Box's physicsBody
 	this->addChild(Box);
 }
-<<<<<<< Updated upstream
-void MainScene::addBarrel() {
-=======
 void MainScene::addBarrel(const cocos2d::Vec2& s) {
->>>>>>> Stashed changes
 	auto Barrel = Sprite::create("barrel.png");
 	// Add Barrel
 	auto BarrelContentSize = Barrel->getContentSize();
 	Barrel->setPosition(s);
 	// Add Barrel's physicsBody
-	auto physicsBody = PhysicsBody::createBox(Barrel->getContentSize(), PhysicsMaterial(0.0f, 0.0f, 0.0f));
+	auto physicsBody = PhysicsBody::createBox(Barrel->getContentSize()/2, PhysicsMaterial(0.0f, 0.0f, 0.0f));
 	physicsBody->setDynamic(false);
 	physicsBody->setContactTestBitmask(0xFFFFFFFF);
 	Barrel->setPhysicsBody(physicsBody);
@@ -407,33 +326,6 @@ void MainScene::menuCloseCallback(Ref* sender)
 {
     Director::getInstance()->end();
 }
-/*
-void MainScene::mov_monsters(float delta) {
-	int n = monster_group.size();
-	for (int i = 0; i < n; i++) {
-		auto mon_tmp = monster_group[i];
-		auto mon_pos = mon_tmp->getPosition();
-		monster_group[i]->set_direction(Judgedirection(mon_pos));
-		monster_group[i]->move();
-	}
-}
-
-MainScene::Direction MainScene::Judgedirection(const Vec2& mon_pos) {
-	auto delta_dis =  _player->getPosition()-mon_pos;
-	if (abs(delta_dis.x) >= abs(delta_dis.y)) {
-		if (delta_dis.x < 0)
-			return LEFT;//left
-		else
-			return RIGHT;//right
-	}
-	else {
-		if (delta_dis.y < 0)
-			return UP;//up
-		else
-			return DOWN;//down
-	}
-}
-*/
 
 bool MainScene::onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact) {
 	auto nodeA = contact.getShapeA()->getBody()->getNode();
@@ -442,20 +334,143 @@ bool MainScene::onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact) {
 	{
 		if (nodeA->getTag() == BARREL_TAG && nodeB->getTag() == BULLET_TAG)
 		{
+			auto sound_boom = AudioEngine::play2d("sound/boom.mp3", false);
 			auto position_tmp = nodeA->getPosition();
 			if (abs(_player->getPosition().x - position_tmp.x)+abs(_player->getPosition().y - position_tmp.y) < 500) {
 				_player->decrease_hp_barrel();
 			}
+			for (auto k : _BigMonster) {
+				if (abs(k->getPosition().x - position_tmp.x) + abs(k->getPosition().y - position_tmp.y) < 100) {
+					k->under_attack(position_tmp - k->getPosition(), 50);
+				}
+			}
+			for (auto k : _SmallMonster) {
+				if (abs(k->getPosition().x - position_tmp.x) + abs(k->getPosition().y - position_tmp.y) < 100) {
+					k->under_attack(position_tmp - k->getPosition(), 50);
+				}
+			}
 			nodeA->removeFromParentAndCleanup(true);
+			nodeB->removeFromParentAndCleanup(true);
 		}
 		else if (nodeB->getTag() == BARREL_TAG && nodeA->getTag() ==BULLET_TAG)
 		{
+			auto sound_boom = AudioEngine::play2d("sound/boom.mp3", false);
 			auto position_tmp = nodeB->getPosition();
 			if (abs(_player->getPosition().x - position_tmp.x)+abs(_player->getPosition().y - position_tmp.y) < 500) {
 				_player->decrease_hp_barrel();
 			}
+			for (auto k : _BigMonster) {
+				if (abs(k->getPosition().x - position_tmp.x) + abs(k->getPosition().y - position_tmp.y) < 100) {
+					k->under_attack(position_tmp - k->getPosition(), 50);
+				}
+			}
+			for (auto k : _SmallMonster) {
+				if (abs(k->getPosition().x - position_tmp.x) + abs(k->getPosition().y - position_tmp.y) < 100) {
+					k->under_attack(position_tmp - k->getPosition(), 50);
+				}
+			}
+			nodeA->removeFromParentAndCleanup(true);
 			nodeB->removeFromParentAndCleanup(true);
 		}
+	}
+	return true;
+}
+
+bool MainScene::onContactBegin_player_fireball(cocos2d::PhysicsContact& contact){
+	auto nodeA = contact.getShapeA()->getBody()->getNode();
+	auto nodeB = contact.getShapeB()->getBody()->getNode();
+	bool contact_flag = false;
+	Vec2 position_tmp1;
+	Vec2 pos1, pos2, diff;
+	
+	if (nodeA && nodeB)
+	{
+		if (nodeA->getTag() == FIREBALL_TAG && nodeB->getTag() == PLAYER_TAG){
+			position_tmp1 = nodeA->getPosition();
+			pos1 = nodeA->getParent()->convertToWorldSpace(position_tmp1);
+			pos2 = nodeB->getPosition();			
+
+			nodeA->removeFromParentAndCleanup(true);
+			contact_flag = true;
+		}
+		else if (nodeB->getTag() == FIREBALL_TAG && nodeA->getTag() == PLAYER_TAG)
+		{
+			position_tmp1 = nodeB->getPosition();
+			pos1 = nodeB->getParent()->convertToWorldSpace(position_tmp1);
+			pos2 = nodeA->getPosition();
+
+			nodeB->removeFromParentAndCleanup(true);
+			contact_flag = true;
+		}
+	}
+	if (contact_flag) {
+		diff = pos1 - pos2;
+		int dir = getdirection(diff);	//0->上方  1->下  2->左   3->右
+		_player->Is_under_attack(dir);
+		if (_player->hp < 0) {
+			auto soundEffectID = AudioEngine::play2d("sound/enter_game.mp3", false);
+			Director::getInstance()->replaceScene(TransitionSlideInT::create(0.5f, End::scene()));
+		}
+	}
+	return true;
+}
+//子弹 僵尸
+bool MainScene::onContactBegin_bullet_monster(cocos2d::PhysicsContact& contact){
+	auto nodeA = contact.getShapeA()->getBody()->getNode();
+	auto nodeB = contact.getShapeB()->getBody()->getNode();
+	BigMonster* a = nullptr;
+	SmallMonster* b = nullptr;
+	bool contact_flag = false;
+	bool contact_flag2 = false;
+	Vec2 pos1, pos2, diff;
+	if (nodeA && nodeB)
+	{
+		if (nodeA->getTag() == BOSS_TAG && nodeB->getTag() == BULLET_TAG)
+		{
+			a = (BigMonster*)nodeA;	
+			pos1 = nodeA->getPosition();
+			pos2 = nodeB->getPosition();
+			if (a->hp > 0)
+				nodeB->removeFromParentAndCleanup(true);
+			contact_flag = true;
+		}
+		else if (nodeB->getTag() == BOSS_TAG && nodeA->getTag() == BULLET_TAG)
+		{
+			a = (BigMonster*)nodeB;
+			pos2 = nodeA->getPosition();
+			pos1 = nodeB->getPosition();
+			if (a->hp > 0)
+				nodeA->removeFromParentAndCleanup(true);
+			contact_flag = true;
+		}
+		else if (nodeA->getTag() == SMALL_TAG && nodeB->getTag() == BULLET_TAG)
+		{
+			b = (SmallMonster*)nodeA;
+			pos1 = nodeA->getPosition();
+			pos2 = nodeB->getPosition();
+			if (b->hp > 0)
+				nodeB->removeFromParentAndCleanup(true);
+			contact_flag2 = true;
+		}
+		else if (nodeB->getTag() == SMALL_TAG && nodeA->getTag() == BULLET_TAG)
+		{
+			b = (SmallMonster*)nodeB;
+			pos2 = nodeA->getPosition();
+			pos1 = nodeB->getPosition();
+			if (b->hp > 0)
+				nodeA->removeFromParentAndCleanup(true);
+			contact_flag2 = true;
+		}
+	}
+	if (contact_flag) {
+		diff = pos1 - pos2;
+		if(a->hp>0)
+			a->under_attack(diff,_player->get_weapon_attribute().Damage/5*20);
+	}
+	if (contact_flag2) {
+		diff = pos1 - pos2;
+		if (b->hp > 0)
+			b->under_attack(diff, _player->get_weapon_attribute().Damage / 5 * 20);
 	}
 	return true;
 }
@@ -480,46 +495,55 @@ bool MainScene::onContactBegin_player_box(cocos2d::PhysicsContact& contact) {
 		}
 	}
 	if (contact_flag) {
+		auto sound_box = AudioEngine::play2d("sound/change_weapon.mp3", false);
 		_player->add_bullet_random();
 		_player->renew_display_num();
 	}
 	return true;
 }
 
-<<<<<<< Updated upstream
-=======
 //添加boss僵尸的方法 	birthpoint: 0->上  1->下  2->左   3->右
 void MainScene::addBigMonster(int birth_point) {
 	auto boss = BigMonster::create("Boss_DO_01.png");
+	//物理引擎
+	auto physicsBody = PhysicsBody::createBox(boss->getContentSize() / 3, PhysicsMaterial(0.0f, 0.0f, 0.0f));
+	physicsBody->setDynamic(false);
+	physicsBody->setContactTestBitmask(0xFFFFFFFF);
+	boss->setPhysicsBody(physicsBody);
+	boss->setTag(BOSS_TAG);
 	_BigMonster.push_back(boss);
+	//随机波动
+	std::random_device rd;
+	auto eng = std::default_random_engine{ rd() };
+	auto dis = std::uniform_int_distribution<>{ -40,40 };
+	auto rand = Vec2{ (float)dis(eng),(float)dis(eng) };
 	//根据出生地选择初始的位置  768*1024
 	switch (birth_point) {
 	case 0: {
-		boss->setPosition(Vec2(512, 786));
+		boss->setPosition(Vec2(512, 786) + rand);
 		break;
 	}
 	case 1: {
-		boss->setPosition(Vec2(512, 0));
+		boss->setPosition(Vec2(512, 0) + rand);
 		break;
 	}
 	case 2: {
-		boss->setPosition(Vec2(0, 393));
+		boss->setPosition(Vec2(0, 393) + rand);
 		break;
 	}
 	case 3: {
-		boss->setPosition(Vec2(1024, 393));
+		boss->setPosition(Vec2(1024, 393) + rand);
 		break;
 	}
 	default: {
-		boss->setPosition(Vec2(300, 300));
+		boss->setPosition(Vec2(300, 300) + rand);
 		break;
 	}
 	}
 
 	this->addChild(boss);
+}
 
-<<<<<<< Updated upstream
-=======
 void MainScene::addSmallMonster(int birth_point){
 	auto boss = SmallMonster::create("0_01.png");
 	//物理引擎
@@ -529,26 +553,31 @@ void MainScene::addSmallMonster(int birth_point){
 	boss->setPhysicsBody(physicsBody);
 	boss->setTag(SMALL_TAG);
 	_SmallMonster.push_back(boss);
+	//随机波动
+	std::random_device rd;
+	auto eng = std::default_random_engine{ rd() };
+	auto dis = std::uniform_int_distribution<>{ -40,40 };
+	auto rand = Vec2{ (float)dis(eng),(float)dis(eng) };
 	//根据出生地选择初始的位置  768*1024
 	switch (birth_point) {
 	case 0: {
-		boss->setPosition(Vec2(512, 786));
+		boss->setPosition(Vec2(512, 786)+rand);
 		break;
 	}
 	case 1: {
-		boss->setPosition(Vec2(512, 0));
+		boss->setPosition(Vec2(512, 0) + rand);
 		break;
 	}
 	case 2: {
-		boss->setPosition(Vec2(0, 393));
+		boss->setPosition(Vec2(0, 393) + rand);
 		break;
 	}
 	case 3: {
-		boss->setPosition(Vec2(1024, 393));
+		boss->setPosition(Vec2(1024, 393) + rand);
 		break;
 	}
 	default: {
-		boss->setPosition(Vec2(300, 300));
+		boss->setPosition(Vec2(300, 300) + rand);
 		break;
 	}
 	}
@@ -570,18 +599,29 @@ int MainScene::get_z_odre(cocos2d::Node* spr){
 	int ry = 800*1024 - p.y*1024;
 	int x = p.x;
 	return ry+x;
->>>>>>> Stashed changes
 }
 
 //僵尸移动的调度器
 void MainScene::monster_move(float dt) {
 	auto destination = _player->getPosition();
 	for (auto k : _BigMonster) {
-		auto source = k->getPosition();
-		auto diff = destination - source;
-		if (fabs(diff.x) > 200 || fabs(diff.y) > 200) {
-			auto direction = getdirection(diff);
-			k->move(direction);
+		if (k->hp > 0) {
+			auto source = k->getPosition();
+			auto diff = destination - source;
+			if (fabs(diff.x) > 200 || fabs(diff.y) > 200) {
+				auto direction = getdirection(diff);
+				k->move(direction);
+			}
+		}
+	}
+	for (auto k : _SmallMonster) {
+		if (k->hp > 0) {
+			auto source = k->getPosition();
+			auto diff = destination - source;
+			if (fabs(diff.x) > 100 || fabs(diff.y) > 100) {
+				auto direction = getdirection(diff);
+				k->move(direction);
+			}
 		}
 	}
 
@@ -590,19 +630,27 @@ void MainScene::monster_move(float dt) {
 void MainScene::monster_attack(float dt) {
 	auto destination = _player->getPosition();
 	for (auto k : _BigMonster) {
-		auto source = k->getPosition();
-		auto diff = destination - source;
-		if (fabs(diff.x) < 200 && fabs(diff.y) < 200) {
-			auto direction = getdirection(diff);
-			k->attack(diff);
+		if (k->hp > 0) {
+			auto source = k->getPosition();
+			auto diff = destination - source;
+			if (fabs(diff.x) <= 200 && fabs(diff.y) <= 200) {
+				auto direction = getdirection(diff);
+				k->attack(diff);
+			}
+		}
+	}
+	for (auto k : _SmallMonster) {
+		if (k->hp > 0) {
+			auto source = k->getPosition();
+			auto diff = destination - source;
+			if (fabs(diff.x) <= 100 && fabs(diff.y) <= 100) {
+				auto direction = getdirection(diff);
+				k->attack(diff);
+			}
 		}
 	}
 
 }
-<<<<<<< Updated upstream
-
->>>>>>> Stashed changes
-=======
 //僵尸死亡调度器
 void MainScene::monster_death(float dt){
 	bool Is_level_up = true;
@@ -633,7 +681,10 @@ void MainScene::monster_death(float dt){
 }
 
 void MainScene::level_up() {
+	//进游戏音效
+	auto sound_level_up = AudioEngine::play2d("sound/enter_game.mp3", false);
 	current_level++;
+	auto a = _SmallMonster.size();
 	current_level_label->setString("level:" + std::to_string(current_level));
 	for (int i = 0; i < 10 * current_level; i++) {
 		addSmallMonster(i % 4);
@@ -641,6 +692,34 @@ void MainScene::level_up() {
 	for (int i = 0; i < current_level; i++) {
 		addBigMonster(i % 4);
 	}
-}
->>>>>>> Stashed changes
+	auto winSize = Director::getInstance()->getVisibleSize();
+	std::random_device rd_x;
+	auto eng_x = std::default_random_engine{ rd_x() };
+	auto dis_x = std::uniform_int_distribution<>{0 ,int(winSize.width) };
+	
+	std::random_device rd_y;
+	auto eng_y = std::default_random_engine{ rd_y() };
+	auto dis_y = std::uniform_int_distribution<>{ 0 ,int(winSize.height) };
 
+	for (int i = 0; i < current_level; i++) {
+		int rand_x = dis_x(eng_x);
+		int rand_y = dis_y(eng_y);
+		addBox(Vec2(rand_x, rand_y));
+	}
+	for (int i = 0; i < current_level; i++) {
+		int rand_x = dis_x(eng_x);
+		int rand_y = dis_y(eng_y);
+		addBarrel(Vec2(rand_x, rand_y));
+	}
+}
+
+void attack_sound(std::string gun_name) {
+	if (gun_name == "pistol")
+		auto sound_pistol = AudioEngine::play2d("sound/pistol.mp3", false);
+	else if (gun_name == "UZI")
+		auto sound_pistol = AudioEngine::play2d("sound/uzi.mp3", false);
+	else if (gun_name == "shotgun")
+		auto sound_pistol = AudioEngine::play2d("sound/shotgun.mp3", false);
+	else if (gun_name == "barrel")
+		auto sound_pistol = AudioEngine::play2d("sound/add_barrel.mp3", false);
+}

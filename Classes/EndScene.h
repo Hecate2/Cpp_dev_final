@@ -1,10 +1,9 @@
-#ifndef __START_SCENE_H__
-#define __START_SCENE_H__
+#ifndef __END_SCENE_H__
+#define __END_SCENE_H__
 
 #include "cocos2d.h"
-#include "AudioEngine.h"
 
-class Start : public cocos2d::Scene
+class End : public cocos2d::Scene
 {
 public:
 	virtual bool init() override;
@@ -15,7 +14,7 @@ public:
 	void menuCloseCallback(Ref* sender);
 
 	// implement the "static create()" method manually
-	CREATE_FUNC(Start);
+	CREATE_FUNC(End);
 private:
 
 };

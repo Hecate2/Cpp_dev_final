@@ -62,8 +62,8 @@ public:
 		hp -= 20;
 	}
 	void add_hp_timely() {
-		if (hp<100)
-			hp++;
+		if (hp < 100)
+			hp = hp + 3;
 	}
 	void renew_display_num() {
 		if (current_weapon->weapon_name!="pistol")
@@ -73,15 +73,20 @@ public:
 		for (int i = 1; i < 4; i++) {
 			if (weapon_store[i].num < weapon_store[i].max_num) {
 				weapon_store[i].num = weapon_store[i].max_num;
-				break;
+				//break;
 			}
 		}
 	}
+	int hp = 100;
+	void player_move(cocos2d::EventKeyboard::KeyCode keyCode);
+	void Is_under_attack(int dir);
 	virtual bool init() override;
 private:
 	Direction Curr_Dir = UP;
-	int hp = 100;
+	bool under_attack = false;
 	weapon* current_weapon;
 	cocos2d::Label* current_weapon_label;
 	std::vector<weapon> weapon_store;
 };
+
+
