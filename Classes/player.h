@@ -42,7 +42,8 @@ public:
 		return current_weapon->weapon_name == "barrel";
 	}
 	void decrease_weapon_num() {
-		(*current_weapon).num--;
+		if ((*current_weapon).weapon_name!="pistol")
+			(*current_weapon).num--;
 	}
 	bool change_weapon(int weapon_option) {
 		if (!weapon_store[weapon_option].enable)

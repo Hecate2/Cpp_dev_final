@@ -59,6 +59,13 @@ public:
 	//void mov_monsters(float delta);
 >>>>>>> Stashed changes
 	bool onContactBegin_player_box(cocos2d::PhysicsContact& contact);
+<<<<<<< Updated upstream
+=======
+    bool onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact);
+    bool onContactBegin_player_fireball(cocos2d::PhysicsContact& contact);
+    bool onContactBegin_bullet_monster(cocos2d::PhysicsContact& contact);
+	void level_up();
+>>>>>>> Stashed changes
     // implement the "static create()" method manually
 
 	void monster_move(float dt);    //僵尸移动的调度器函数
@@ -70,8 +77,15 @@ private:
 <<<<<<< Updated upstream
 =======
 	int score=0;
+	int current_level = 0;
 	std::map<cocos2d::EventKeyboard::KeyCode, bool> keys;
 	std::vector<BigMonster*> _BigMonster;
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+    std::vector<SmallMonster*> _SmallMonster;
+	cocos2d::Label* current_score_label;
+	cocos2d::Label* current_level_label;
 >>>>>>> Stashed changes
 };
 
