@@ -68,6 +68,19 @@ bool MainScene::init()
 		background->setScale(1.0f);
 		this->addChild(background);
 	}
+<<<<<<< Updated upstream
+=======
+	background->setGlobalZOrder(-1);	//显示在最下层
+	current_score_label = Label::createWithTTF("Score:0000", "score.ttf", 24);
+	current_score_label->setPosition(Vec2(winSize.width * 0.5-120, winSize.height*0.9));
+	this->addChild(current_score_label);
+
+	current_level_label = Label::createWithTTF("level:0", "score.ttf", 24);
+	current_level_label->setPosition(Vec2(winSize.width * 0.5+120, winSize.height * 0.9));
+	this->addChild(current_level_label);
+	//渲染顺序的调度器
+	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::set_z_oder));
+>>>>>>> Stashed changes
 	
 	//玩家初始化
 >>>>>>> Stashed changes
@@ -79,6 +92,7 @@ bool MainScene::init()
 	physicsBody->setDynamic(false);
 	physicsBody->setContactTestBitmask(0xFFFFFFFF);
 	_player->setPhysicsBody(physicsBody);
+<<<<<<< Updated upstream
 	_player->setTag(PLAYER_TAG);
 	this->addChild(_player);
 <<<<<<< Updated upstream
@@ -89,6 +103,19 @@ bool MainScene::init()
 =======
 	this->addBarrel(Vec2(50, 50));
 	this->addBox();
+=======
+	_player->setTag(PLAYER_TAG);//设立标签
+	this->addChild(_player); //添加进场景
+	//添加油漆桶，箱子和大怪物
+	this->addBarrel(Vec2(50, 50));
+	this->addBox(Vec2(300, 350));
+	this->addBigMonster(0);
+	this->addSmallMonster(1);
+	//僵尸的移动和攻击调度器和死亡
+	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::monster_move), 3.0, -1, 0);
+	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::monster_attack), 1.0, -1, 0);
+	this->schedule(CC_SCHEDULE_SELECTOR(MainScene::monster_death), 1.0, -1, 0);
+>>>>>>> Stashed changes
 
 	this->addBigMonster(0);
 
@@ -491,6 +518,59 @@ void MainScene::addBigMonster(int birth_point) {
 
 	this->addChild(boss);
 
+<<<<<<< Updated upstream
+=======
+void MainScene::addSmallMonster(int birth_point){
+	auto boss = SmallMonster::create("0_01.png");
+	//物理引擎
+	auto physicsBody = PhysicsBody::createBox(boss->getContentSize() / 3, PhysicsMaterial(0.0f, 0.0f, 0.0f));
+	physicsBody->setDynamic(false);
+	physicsBody->setContactTestBitmask(0xFFFFFFFF);
+	boss->setPhysicsBody(physicsBody);
+	boss->setTag(SMALL_TAG);
+	_SmallMonster.push_back(boss);
+	//根据出生地选择初始的位置  768*1024
+	switch (birth_point) {
+	case 0: {
+		boss->setPosition(Vec2(512, 786));
+		break;
+	}
+	case 1: {
+		boss->setPosition(Vec2(512, 0));
+		break;
+	}
+	case 2: {
+		boss->setPosition(Vec2(0, 393));
+		break;
+	}
+	case 3: {
+		boss->setPosition(Vec2(1024, 393));
+		break;
+	}
+	default: {
+		boss->setPosition(Vec2(300, 300));
+		break;
+	}
+	}
+
+	this->addChild(boss);
+}
+
+//对所有项目进行渲染顺序的调整，解决覆盖问题，用于调度器
+void MainScene::set_z_oder(float dt){
+	//_player->setLocalZOrder(get_z_odre(_player));
+	auto all_children = getChildren();
+	for (auto k : all_children) {
+		k->setLocalZOrder(get_z_odre(k));
+	}	
+}
+
+int MainScene::get_z_odre(cocos2d::Node* spr){
+	auto p = spr->getPosition();
+	int ry = 800*1024 - p.y*1024;
+	int x = p.x;
+	return ry+x;
+>>>>>>> Stashed changes
 }
 
 //僵尸移动的调度器
@@ -519,6 +599,48 @@ void MainScene::monster_attack(float dt) {
 	}
 
 }
+<<<<<<< Updated upstream
 
+>>>>>>> Stashed changes
+=======
+//僵尸死亡调度器
+void MainScene::monster_death(float dt){
+	bool Is_level_up = true;
+	for (auto k : _BigMonster) {
+		if (k->hp <= 0) {
+			k->death();
+			score += 1000;
+			current_score_label->setString("Score:" + std::to_string(score));
+		}
+		else
+			Is_level_up = false;
+	}
+	_BigMonster.erase(remove_if(_BigMonster.begin(), _BigMonster.end(), 
+		[](BigMonster* x) {  return (x->hp <= 0); }), _BigMonster.end());
+	for (auto k : _SmallMonster) {
+		if (k->hp <= 0) {
+			k->death();
+			score += 100;
+			current_score_label->setString("Score:" + std::to_string(score));
+		}
+		else
+			Is_level_up = false;
+	}
+	_SmallMonster.erase(remove_if(_SmallMonster.begin(), _SmallMonster.end(),
+		[](SmallMonster* x) { return (x->hp <= 0); }), _SmallMonster.end());
+	if (Is_level_up)
+		level_up();
+}
+
+void MainScene::level_up() {
+	current_level++;
+	current_level_label->setString("level:" + std::to_string(current_level));
+	for (int i = 0; i < 10 * current_level; i++) {
+		addSmallMonster(i % 4);
+	}
+	for (int i = 0; i < current_level; i++) {
+		addBigMonster(i % 4);
+	}
+}
 >>>>>>> Stashed changes
 
