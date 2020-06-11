@@ -1,3 +1,4 @@
+#include "StartScene.h"
 #include "EndScene.h"
 #include "MainScene.h"
 #include "AppMacros.h"
@@ -28,7 +29,7 @@ bool End::init()
 	background->drawSolidRect(origin, winSize, cocos2d::Color4F(0.6, 0.6, 0.6, 1.0));
 	this->addChild(background);
 
-	auto bg = Sprite::create("end.png");
+	auto bg = Sprite::create("end.png");  //±³¾°Í¼
 	if (bg)
 	{
 		bg->setPosition(Vec2(origin.x + CENTER_X, origin.y + CENTER_Y));
@@ -42,14 +43,25 @@ bool End::init()
 		"CloseSelected.png",
 		CC_CALLBACK_1(End::menuCloseCallback, this));
 
-
 	float x = origin.x + winSize.width / 2 - beginbutton->getContentSize().width / 2 + 5;
 	float y = origin.y + winSize.height / 2 + beginbutton->getContentSize().height / 2 - 40;
 	beginbutton->setPosition(Vec2(x, y));
 
+	auto to_start_scene_button = MenuItemImage::create(
+		"bang.png",
+		"bang.png",
+		CC_CALLBACK_1(End::toStartScene, this));
+
+	float x_to_start_scene_button = origin.x + winSize.width / 2 - to_start_scene_button->getContentSize().width / 2 - 415;
+	float y_to_start_scene_button = origin.y + winSize.height / 2 + to_start_scene_button->getContentSize().height / 2 + 297;
+	to_start_scene_button->setPosition(Vec2(x_to_start_scene_button, y_to_start_scene_button));
+
 	auto menu = Menu::create(beginbutton, NULL);
 	menu->setPosition(Vec2::ZERO);
 	this->addChild(menu, 1);
+	auto to_start_scene_button_menu = Menu::create(to_start_scene_button, NULL);
+	to_start_scene_button_menu->setPosition(Vec2::ZERO);
+	this->addChild(to_start_scene_button_menu, 1);
 
 	return true;
 }
@@ -61,3 +73,7 @@ void End::menuCloseCallback(Ref* sender)
 	Director::getInstance()->replaceScene(TransitionSlideInT::create(2.0f, MainScene::scene()));
 }
 
+void End::toStartScene(Ref* sender) {
+	auto soundEffectID = AudioEngine::play2d("sound/enter_game.mp3", false);
+	Director::getInstance()->replaceScene(TransitionSlideInT::create(2.0f, Start::scene()));
+}

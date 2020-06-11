@@ -13,6 +13,8 @@ public:
 	// a selector callback
 	void menuCloseCallback(Ref* sender);
 
+	void toStartScene(Ref* sender);
+
 	// implement the "static create()" method manually
 	CREATE_FUNC(End);
 private:
