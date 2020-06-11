@@ -67,10 +67,14 @@ public:
     void set_z_oder(float dt);                          //对所有项目进行渲染顺序的调整，解决覆盖问题
     int get_z_odre(cocos2d::Node* spr);
 
+	static int read_highest_score_from_file();
+	void save_highest_score();  //如果当前分数高于历史最高分，则保存当前分数
+
     CREATE_FUNC(MainScene);
 private:
 	player* _player;
 	int score=0;
+	static std::string filename;
 	int current_level = 0;
 	std::map<cocos2d::EventKeyboard::KeyCode, bool> keys;
 	std::vector<BigMonster*> _BigMonster;

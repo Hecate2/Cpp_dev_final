@@ -11,6 +11,7 @@ Scene* End::scene()
 	return End::create();
 }
 
+
 // on "init" you need to initialize your instance
 bool End::init()
 {
@@ -37,6 +38,12 @@ bool End::init()
 		bg->setScale(1.6f);
 		this->addChild(bg);
 	}
+
+	highest_score_label = Label::createWithTTF("Highest Score: 0000", "fonts/score.ttf", 24);
+	highest_score_label->setPosition(Vec2(winSize.width * 0.5 - 60, winSize.height * 0.9));
+	this->addChild(highest_score_label);
+	highest_score_label->setGlobalZOrder(1);
+	highest_score_label->setString("Highest Score: " + std::to_string(MainScene::read_highest_score_from_file()));
 
 	auto beginbutton = MenuItemImage::create(
 		"CloseNormal.png",

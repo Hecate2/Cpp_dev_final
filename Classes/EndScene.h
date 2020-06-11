@@ -18,7 +18,7 @@ public:
 	// implement the "static create()" method manually
 	CREATE_FUNC(End);
 private:
-
+	cocos2d::Label* highest_score_label;
 };
 
 #endif // __HELLOWORLD_SCENE_H__

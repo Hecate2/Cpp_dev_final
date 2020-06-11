@@ -26,6 +26,7 @@
 #include "AppMacros.h"
 #include "math.h"
 #include "EndScene.h"
+#include <fstream>
 USING_NS_CC;
 #define BOX_TAG 7
 #define BULLET_TAG 10
@@ -35,6 +36,8 @@ USING_NS_CC;
 #define BOSS_TAG 12
 #define SMALL_TAG 13
 #define NOR_MONSTER_TAG 15
+
+std::string MainScene::filename = "highest_score.txt";
 
 Scene* MainScene::scene()
 {
@@ -327,6 +330,36 @@ void MainScene::menuCloseCallback(Ref* sender)
     Director::getInstance()->end();
 }
 
+int MainScene::read_highest_score_from_file() {
+	std::ifstream file(filename);
+	try{
+		std::string line;
+		std::getline(file, line);
+		file.close();
+		return std::stoi(line);
+	}
+	catch (...) {
+		throw "unable to read highest score from file";
+		file.close();
+	}
+}
+
+void MainScene::save_highest_score() {
+	try {  // Warning: unclosed file handler
+		int score_from_file = read_highest_score_from_file();
+		if (score > score_from_file) {
+			std::ofstream ofile(filename, std::ios::trunc);
+			ofile << score;
+			ofile.close();
+		}
+	}
+	catch (...) {
+		std::ofstream ofile(filename, std::ios::trunc);
+		ofile << score;
+		ofile.close();
+	}
+}
+
 bool MainScene::onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact) {
 	auto nodeA = contact.getShapeA()->getBody()->getNode();
 	auto nodeB = contact.getShapeB()->getBody()->getNode();
@@ -408,6 +441,7 @@ bool MainScene::onContactBegin_player_fireball(cocos2d::PhysicsContact& contact)
 		int dir = getdirection(diff);	//0->ÉÏ·½  1->ÏÂ  2->×ó   3->ÓÒ
 		_player->Is_under_attack(dir);
 		if (_player->hp < 0) {
+			save_highest_score();
 			auto soundEffectID = AudioEngine::play2d("sound/enter_game.mp3", false);
 			Director::getInstance()->replaceScene(TransitionSlideInT::create(0.5f, End::scene()));
 		}
