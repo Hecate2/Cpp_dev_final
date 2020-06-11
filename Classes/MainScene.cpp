@@ -163,6 +163,9 @@ bool MainScene::onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode,cocos2d::Ev
 	if (keyCode == EventKeyboard::KeyCode::KEY_J) {
 		judge_and_attack();
 	}
+	if (keyCode == EventKeyboard::KeyCode::KEY_U) {
+		_player->player_invincible();
+	}
 	keys[keyCode] = true;
 	if (keyCode == EventKeyboard::KeyCode::KEY_1 || keyCode == EventKeyboard::KeyCode::KEY_2 ||
 		keyCode == EventKeyboard::KeyCode::KEY_3 || keyCode == EventKeyboard::KeyCode::KEY_4) {
@@ -190,10 +193,12 @@ bool MainScene::onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode,cocos2d::Ev
 	return true;
 }
 void MainScene::judge_and_attack() {
-	//µ±Ç°ÎäÆ÷×Óµ¯ºÄ¾¡
-	if (_player->Is_out_of_bullet()) {
-		change_weapon_animation((_player->get_weapon_attribute()).weapon_name, true);
-		return;
+	if (!(_player->invincible)) {
+		//µ±Ç°ÎäÆ÷×Óµ¯ºÄ¾¡
+		if (_player->Is_out_of_bullet()) {
+			change_weapon_animation((_player->get_weapon_attribute()).weapon_name, true);
+			return;
+		}
 	}
 	//ÎäÆ÷ÉùÒô
 	auto gun_name = (_player->get_weapon_attribute()).weapon_name;
@@ -218,7 +223,9 @@ void MainScene::judge_and_attack() {
 			break;
 		}
 		addBarrel(_player->getPosition() + shootAmount);
-		_player->decrease_weapon_num();
+		if (!(_player->invincible)) {
+			_player->decrease_weapon_num();
+		}
 		_player->renew_display_num();
 		return;
 	}
@@ -350,63 +357,71 @@ void MainScene::save_highest_score() {
 }
 
 bool MainScene::onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact) {
-	auto nodeA = contact.getShapeA()->getBody()->getNode();
-	auto nodeB = contact.getShapeB()->getBody()->getNode();
-	Vec2 position_tmp;
-	bool c = false;
-	if (nodeA && nodeB)
-	{
-		if (nodeA->getTag() == BARREL_TAG && nodeB->getTag() == BULLET_TAG)
-		{
-			c = true;
-			position_tmp = nodeA->getPosition();
-			if (abs(_player->getPosition().x - position_tmp.x)+abs(_player->getPosition().y - position_tmp.y) < 500) {
-				_player->decrease_hp_barrel();
-			}
-			for (auto k : _BigMonster) {
-				if (abs(k->getPosition().x - position_tmp.x) + abs(k->getPosition().y - position_tmp.y) < 100) {
-					k->under_attack(position_tmp - k->getPosition(), 50);
-				}
-			}
-			for (auto k : _SmallMonster) {
-				if (abs(k->getPosition().x - position_tmp.x) + abs(k->getPosition().y - position_tmp.y) < 100) {
-					k->under_attack(position_tmp - k->getPosition(), 50);
-				}
-			}
-			nodeA->removeFromParentAndCleanup(true);
-			nodeB->removeFromParentAndCleanup(true);
+	try {
+		auto nodeA = contact.getShapeA()->getBody()->getNode();
+		auto nodeB = contact.getShapeB()->getBody()->getNode();
+		if (!nodeA || !nodeB) {
+			throw "Too many barrels in the scene; multiple barrels contacted a bullet";
 		}
-		else if (nodeB->getTag() == BARREL_TAG && nodeA->getTag() ==BULLET_TAG)
+		Vec2 position_tmp;
+		bool c = false;
+		if (nodeA && nodeB)
 		{
-			c = true;
-			position_tmp = nodeB->getPosition();
-			if (abs(_player->getPosition().x - position_tmp.x)+abs(_player->getPosition().y - position_tmp.y) < 200) {
-				_player->decrease_hp_barrel();
-			}
-			for (auto k : _BigMonster) {
-				if (abs(k->getPosition().x - position_tmp.x) + abs(k->getPosition().y - position_tmp.y) < 200) {
-					k->under_attack(position_tmp - k->getPosition(), 50);
+				if (nodeA->getTag() == BARREL_TAG && nodeB->getTag() == BULLET_TAG)
+				{
+					c = true;
+					position_tmp = nodeA->getPosition();
+					if (abs(_player->getPosition().x - position_tmp.x) + abs(_player->getPosition().y - position_tmp.y) < 500) {
+						_player->decrease_hp_barrel();
+					}
+					for (auto k : _BigMonster) {
+						if (abs(k->getPosition().x - position_tmp.x) + abs(k->getPosition().y - position_tmp.y) < 100) {
+							k->under_attack(position_tmp - k->getPosition(), 50);
+						}
+					}
+					for (auto k : _SmallMonster) {
+						if (abs(k->getPosition().x - position_tmp.x) + abs(k->getPosition().y - position_tmp.y) < 100) {
+							k->under_attack(position_tmp - k->getPosition(), 50);
+						}
+					}
+					nodeA->removeFromParentAndCleanup(true);
+					nodeB->removeFromParentAndCleanup(true);
 				}
-			}
-			for (auto k : _SmallMonster) {
-				if (abs(k->getPosition().x - position_tmp.x) + abs(k->getPosition().y - position_tmp.y) < 200) {
-					k->under_attack(position_tmp - k->getPosition(), 50);
+				else if (nodeB->getTag() == BARREL_TAG && nodeA->getTag() == BULLET_TAG)
+				{
+					c = true;
+					position_tmp = nodeB->getPosition();
+					if (abs(_player->getPosition().x - position_tmp.x) + abs(_player->getPosition().y - position_tmp.y) < 200) {
+						_player->decrease_hp_barrel();
+					}
+					for (auto k : _BigMonster) {
+						if (abs(k->getPosition().x - position_tmp.x) + abs(k->getPosition().y - position_tmp.y) < 200) {
+							k->under_attack(position_tmp - k->getPosition(), 50);
+						}
+					}
+					for (auto k : _SmallMonster) {
+						if (abs(k->getPosition().x - position_tmp.x) + abs(k->getPosition().y - position_tmp.y) < 200) {
+							k->under_attack(position_tmp - k->getPosition(), 50);
+						}
+					}
+					nodeA->removeFromParentAndCleanup(true);
+					nodeB->removeFromParentAndCleanup(true);
 				}
-			}			
-			nodeA->removeFromParentAndCleanup(true);
-			nodeB->removeFromParentAndCleanup(true);
 		}
+		if (c) {
+			auto sound_boom = AudioEngine::play2d("sound/boom.mp3", false);
+			auto boom = Sprite::create("boom0.png");
+			boom->setPosition(position_tmp);
+			this->addChild(boom);
+			auto fade = cocos2d::FadeTo::create(1, 0);
+			auto actionRemove = RemoveSelf::create();
+			boom->runAction(Sequence::create(fade, actionRemove, nullptr));
+		}
+		return true;
 	}
-	if (c) {
-		auto sound_boom = AudioEngine::play2d("sound/boom.mp3", false);
-		auto boom = Sprite::create("boom0.png");
-		boom->setPosition(position_tmp);
-		this->addChild(boom);
-		auto fade = cocos2d::FadeTo::create(1, 0);
-		auto actionRemove = RemoveSelf::create();
-		boom->runAction(Sequence::create(fade, actionRemove, nullptr));
+	catch (...) {
+		;
 	}
-	return true;
 }
 
 bool MainScene::onContactBegin_player_fireball(cocos2d::PhysicsContact& contact){

@@ -24,6 +24,8 @@ public:
 };
 class player :public cocos2d::Sprite {
 public:
+	void player_invincible();
+	bool invincible = false;
 	//player();
 	enum Direction { UP, DOWN, LEFT, RIGHT };
 	static player* player::create(const std::string& filename);
@@ -52,7 +54,9 @@ public:
 		return hp;
 	}
 	void decrease_hp_barrel() {//在与油漆桶爆炸范围内的血量损失
-		hp -= 20;
+		if (!invincible) {
+			hp -= 20;
+		}
 	}
 	void add_hp_timely() {//每秒回血
 		if (hp < 100)

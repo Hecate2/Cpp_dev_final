@@ -20,7 +20,9 @@ bool player::init() {//³õÊ¼»¯
 	init_hp_bar();//³õÊ¼»¯ÑªÌõÏÔÊ¾
 	return true;
 }
-
+void player::player_invincible() {
+	invincible = !invincible;
+}
 void player::init_weapon_system() {
 	//³õÊ¼»¯ÎäÆ÷¿â
 	weapon_store.resize(4);
@@ -120,8 +122,10 @@ void player::player_move(cocos2d::EventKeyboard::KeyCode keyCode) {//¸ù¾Ý¼üÅÌÒÆ¶
 }
 
 void player::Is_under_attack(int dir) {//ÈËÎïÊÕµ½¹¥»÷ºóºóÍË
-	this->hp -= 30;
-	stopActionByTag(PLAYER_MOVE_ACTION_TAG);	//Í£µôÒÆ¶¯µÄ¶¯×÷
+	if (!invincible) {
+		this->hp -= 30;
+		stopActionByTag(PLAYER_MOVE_ACTION_TAG);	//Í£µôÒÆ¶¯µÄ¶¯×÷
+	}
 	int distance = 20;
 	float time = 0.3;
 	auto move_down = cocos2d::MoveBy::create(time, cocos2d::Vec2(0, -distance));
@@ -192,7 +196,9 @@ void player::player_attack() {
 		shootAmount = cocos2d::Vec2(tmp_weapon.distance, 0);
 		break;
 	}
-	this->decrease_weapon_num(); //¼õÉÙ×Óµ¯Êý
+	if (!invincible) {
+		this->decrease_weapon_num(); //¼õÉÙ×Óµ¯Êý
+	}
 	this->renew_display_num();//¸üÐÂÏÔÊ¾
 	//×Óµ¯µÄ¶¯×÷
 	auto realDest = shootAmount + bullet->getPosition();//Êµ¼Ê×Óµ¯¹ì¼£ÖÕµã
