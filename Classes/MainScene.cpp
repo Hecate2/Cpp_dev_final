@@ -360,9 +360,6 @@ bool MainScene::onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact) {
 	try {
 		auto nodeA = contact.getShapeA()->getBody()->getNode();
 		auto nodeB = contact.getShapeB()->getBody()->getNode();
-		if (!nodeA || !nodeB) {
-			throw "Too many barrels in the scene; multiple barrels contacted a bullet";
-		}
 		Vec2 position_tmp;
 		bool c = false;
 		if (nodeA && nodeB)
@@ -425,107 +422,141 @@ bool MainScene::onContactBegin_bullet_barrel(cocos2d::PhysicsContact& contact) {
 }
 
 bool MainScene::onContactBegin_player_fireball(cocos2d::PhysicsContact& contact){
-	auto nodeA = contact.getShapeA()->getBody()->getNode();
-	auto nodeB = contact.getShapeB()->getBody()->getNode();
-	bool contact_flag = false;
-	Vec2 position_tmp1;
-	Vec2 pos1, pos2, diff;
-	
-	if (nodeA && nodeB)
-	{
-		if (nodeA->getTag() == FIREBALL_TAG && nodeB->getTag() == PLAYER_TAG){
-			position_tmp1 = nodeA->getPosition();
-			pos1 = nodeA->getParent()->convertToWorldSpace(position_tmp1);
-			pos2 = nodeB->getPosition();			
+	try {
+		auto nodeA = contact.getShapeA()->getBody()->getNode();
+		auto nodeB = contact.getShapeB()->getBody()->getNode();
+		bool contact_flag = false;
+		Vec2 position_tmp1;
+		Vec2 pos1, pos2, diff;
 
-			nodeA->removeFromParentAndCleanup(true);
-			contact_flag = true;
-		}
-		else if (nodeB->getTag() == FIREBALL_TAG && nodeA->getTag() == PLAYER_TAG)
+		if (nodeA && nodeB)
 		{
-			position_tmp1 = nodeB->getPosition();
-			pos1 = nodeB->getParent()->convertToWorldSpace(position_tmp1);
-			pos2 = nodeA->getPosition();
+			if (nodeA->getTag() == FIREBALL_TAG && nodeB->getTag() == PLAYER_TAG) {
+				position_tmp1 = nodeA->getPosition();
+				Node* parent = nodeA->getParent();
+				if (!parent) {
+					throw "Too many fireballs in the scene; multiple fireballs contacted player";
+				}
+				pos1 = parent->convertToWorldSpace(position_tmp1);
+				pos2 = nodeB->getPosition();
 
-			nodeB->removeFromParentAndCleanup(true);
-			contact_flag = true;
+				nodeA->removeFromParentAndCleanup(true);
+				contact_flag = true;
+			}
+			else if (nodeB->getTag() == FIREBALL_TAG && nodeA->getTag() == PLAYER_TAG)
+			{
+				position_tmp1 = nodeB->getPosition();
+				Node* parent = nodeB->getParent();
+				if (!parent) {
+					throw "Too many fireballs in the scene; multiple fireballs contacted player";
+				}
+				pos1 = parent->convertToWorldSpace(position_tmp1);
+				pos2 = nodeA->getPosition();
+
+				nodeB->removeFromParentAndCleanup(true);
+				contact_flag = true;
+			}
 		}
-	}
-	if (contact_flag) {
-		diff = pos1 - pos2;
-		int dir = getdirection(diff);	//0->上方  1->下  2->左   3->右
-		_player->Is_under_attack(dir);
-		if (_player->hp < 0) {
-			save_highest_score();
-			auto soundEffectID = AudioEngine::play2d("sound/enter_game.mp3", false);
-			Director::getInstance()->replaceScene(TransitionSlideInT::create(0.5f, End::scene()));
+		if (contact_flag) {
+			diff = pos1 - pos2;
+			int dir = getdirection(diff);	//0->上方  1->下  2->左   3->右
+			_player->Is_under_attack(dir);
+			if (_player->hp < 0) {
+				save_highest_score();
+				auto soundEffectID = AudioEngine::play2d("sound/enter_game.mp3", false);
+				Director::getInstance()->replaceScene(TransitionSlideInT::create(0.5f, End::scene()));
+			}
 		}
+		return true;
 	}
-	return true;
+	catch (...) {
+		return true;
+	}
 }
 //子弹 僵尸
 bool MainScene::onContactBegin_bullet_monster(cocos2d::PhysicsContact& contact){
-	auto nodeA = contact.getShapeA()->getBody()->getNode();
-	auto nodeB = contact.getShapeB()->getBody()->getNode();
-	BigMonster* a = nullptr;
-	SmallMonster* b = nullptr;
-	bool contact_flag = false;
-	bool contact_flag2 = false;
-	Vec2 pos1, pos2, diff;
-	if (nodeA && nodeB)
-	{
-		if (nodeA->getTag() == BOSS_TAG && nodeB->getTag() == BULLET_TAG)
+	try {
+		auto nodeA = contact.getShapeA()->getBody()->getNode();
+		auto nodeB = contact.getShapeB()->getBody()->getNode();
+		BigMonster* a = nullptr;
+		SmallMonster* b = nullptr;
+		bool contact_flag = false;
+		bool contact_flag2 = false;
+		Vec2 pos1, pos2, diff;
+		if (nodeA && nodeB)
 		{
-			a = (BigMonster*)nodeA;	
-			pos1 = nodeA->getPosition();
-			pos2 = nodeB->getPosition();
-			pos2 = nodeB->getParent()->convertToWorldSpace(pos2);
+			if (nodeA->getTag() == BOSS_TAG && nodeB->getTag() == BULLET_TAG)
+			{
+				a = (BigMonster*)nodeA;
+				pos1 = nodeA->getPosition();
+				pos2 = nodeB->getPosition();
+				Node* parent = nodeB->getParent();
+				if (!parent) {
+					throw "Too many bullets in the scene; multiple zombies contacted bullet";
+				}
+				pos2 = parent->convertToWorldSpace(pos2);
+				if (a->hp > 0)
+					nodeB->removeFromParentAndCleanup(true);
+				contact_flag = true;
+			}
+			else if (nodeB->getTag() == BOSS_TAG && nodeA->getTag() == BULLET_TAG)
+			{
+				a = (BigMonster*)nodeB;
+				pos2 = nodeA->getPosition();
+				Node* parent = nodeA->getParent();
+				if (!parent) {
+					throw "Too many fireballs in the scene; multiple fireballs contacted player";
+				}
+				pos2 = parent->convertToWorldSpace(pos2);
+				pos1 = nodeB->getPosition();
+				if (a->hp > 0)
+					nodeA->removeFromParentAndCleanup(true);
+				contact_flag = true;
+			}
+			else if (nodeA->getTag() == SMALL_TAG && nodeB->getTag() == BULLET_TAG)
+			{
+				b = (SmallMonster*)nodeA;
+				pos1 = nodeA->getPosition();
+				pos2 = nodeB->getPosition();
+				Node* parent = nodeB->getParent();
+				if (!parent) {
+					throw "Too many bullets in the scene; multiple zombies contacted bullet";
+				}
+				pos2 = parent->convertToWorldSpace(pos2);
+				if (b->hp > 0)
+					nodeB->removeFromParentAndCleanup(true);
+				contact_flag2 = true;
+			}
+			else if (nodeB->getTag() == SMALL_TAG && nodeA->getTag() == BULLET_TAG)
+			{
+				b = (SmallMonster*)nodeB;
+				pos2 = nodeA->getPosition();
+				Node* parent = nodeA->getParent();
+				if (!parent) {
+					throw "Too many bullets in the scene; multiple zombies contacted bullet";
+				}
+				pos2 = parent->convertToWorldSpace(pos2);
+				pos1 = nodeB->getPosition();
+				if (b->hp > 0)
+					nodeA->removeFromParentAndCleanup(true);
+				contact_flag2 = true;
+			}
+		}
+		if (contact_flag) {
+			diff = pos1 - pos2;
 			if (a->hp > 0)
-				nodeB->removeFromParentAndCleanup(true);
-			contact_flag = true;
+				a->under_attack(diff, _player->get_weapon_attribute().Damage / 5 * 20);
 		}
-		else if (nodeB->getTag() == BOSS_TAG && nodeA->getTag() == BULLET_TAG)
-		{
-			a = (BigMonster*)nodeB;
-			pos2 = nodeA->getPosition();
-			pos2 = nodeA->getParent()->convertToWorldSpace(pos2);
-			pos1 = nodeB->getPosition();
-			if (a->hp > 0)
-				nodeA->removeFromParentAndCleanup(true);
-			contact_flag = true;
-		}
-		else if (nodeA->getTag() == SMALL_TAG && nodeB->getTag() == BULLET_TAG)
-		{
-			b = (SmallMonster*)nodeA;
-			pos1 = nodeA->getPosition();
-			pos2 = nodeB->getPosition();
-			pos2 = nodeB->getParent()->convertToWorldSpace(pos2);
+		if (contact_flag2) {
+			diff = pos1 - pos2;
 			if (b->hp > 0)
-				nodeB->removeFromParentAndCleanup(true);
-			contact_flag2 = true;
+				b->under_attack(diff, _player->get_weapon_attribute().Damage / 5 * 20);
 		}
-		else if (nodeB->getTag() == SMALL_TAG && nodeA->getTag() == BULLET_TAG)
-		{
-			b = (SmallMonster*)nodeB;
-			pos2 = nodeA->getPosition();
-			pos2 = nodeA->getParent()->convertToWorldSpace(pos2);
-			pos1 = nodeB->getPosition();
-			if (b->hp > 0)
-				nodeA->removeFromParentAndCleanup(true);
-			contact_flag2 = true;
-		}
+		return true;
 	}
-	if (contact_flag) {
-		diff = pos1 - pos2;
-		if(a->hp>0)
-			a->under_attack(diff,_player->get_weapon_attribute().Damage/5*20);
+	catch (...) {
+		return true;
 	}
-	if (contact_flag2) {
-		diff = pos1 - pos2;
-		if (b->hp > 0)
-			b->under_attack(diff, _player->get_weapon_attribute().Damage / 5 * 20);
-	}
-	return true;
 }
 
 bool MainScene::onContactBegin_player_box(cocos2d::PhysicsContact& contact) {
