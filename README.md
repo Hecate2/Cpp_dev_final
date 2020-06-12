@@ -28,15 +28,16 @@ Your score increases, not immediately but gradually, as you kill zombies. Kill a
 It was **too difficult** for me, as a really unskilled player, even to beat level 2. That's why I made an official cheat to fully test the game (With the cheat I did find and fix a bug in callback functions about physical effects). So just press `U` while playing, to become invincible with unlimited ammo. Press `U` again to exit Invinci Mode. Currently no visual hint is offered in the game for Invinci Mode.  
 
 ## Clone this repository
-Follow [this link](https://help.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh) to create public-private key on your workstation, and update your github account with the public key.
+Follow [this link](https://help.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh) to create public-private key on your workstation, and update your github account with the public key.  
 
 ```shell script
 git clone --recurse-submodules git@github.com:Hecate2/Cpp_dev_final.git
 git config --global submodule.recurse true
 git config --global push.recurseSubmodules on-demand
 ```
-(Well, we did not actually use submodules.)
+(Well, we did not actually use submodules.)  
   
+Tip for Chinese users: if you find it difficult to clone this repository from github, try `gitee` which can import this repo from github and provide convenience for you to `git clone`.  
 ## Environment setup  
 Our environment: 
 ```
