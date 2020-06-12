@@ -10,8 +10,8 @@ Press ![Start Button](./Resources/CloseNormal.png) to start a new game.
 When the game ends, press ![Return Button](./Resources/bang.png) to go back to the title page.  
 #### Move and fire
 Use `W` `A` `S` `D` to move, and `J` to fire.
-#### Choose weapons
-Select your weapons with number keys above `WASD`.
+#### Choose weapons  
+Select your weapons with number keys above `WASD`.  
 `1` for pistol (weak but with infinite ammunition)  
 `2` for Uzi (a type of micro sub-machine gun)  
 `3` for shotgun (boasts high power)  
