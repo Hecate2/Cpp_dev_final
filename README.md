@@ -17,6 +17,9 @@ Select your weapons with number keys above `WASD`.
 `3` for shotgun (boasts high power)  
 `4` for barrels (explode when you shoot them; also hurts yourself)  
 It was quite a debate to set proper firepower for these weapons. Personally speaking, I think the fire rate of Uzi is too low, but that of shotgun goes too high.  
+Tip: repeatedly press `J` very rapidly instead of holding it to reach virtually unlimited fire rate.  
+#### Replenishing ammo
+Pick up red boxes to replenish ammo.
 #### HP  
 Your HP get recovered automatically but slowly as long as you do not get attacked.  
 #### Score  
