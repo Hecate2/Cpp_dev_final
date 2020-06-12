@@ -85,7 +85,7 @@ You may now open `C:\cpp\HelloWorld\win32-build\HelloWorld.sln` with Visual Stud
 Build and run the project if you would like to. You'll see the HelloWorld demo offered by cocos2d-x.  
 
 ### Running our project in your Visual Studio
-[Clone this repository](#Clone this repository). We assume that you run  
+[Clone this repository](#clone-this-repository). We assume that you run  
 ```
 git clone --recurse-submodules git@github.com:Hecate2/Cpp_dev_final.git
 ```
