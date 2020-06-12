@@ -1,5 +1,28 @@
 # Cpp_dev_final
-final project of course "Design Method and Develop Environment of Software" 
+A *BOXHEAD* game (also known as 《僵尸危机》 in Chinese) rebuilt with cocos2d-x-4.0 in C++.  
+Final project of course "Design Method and Develop Environment of Software"  
+
+## User Manual: How to play
+Due to lack of artistic efforts, the user interface might not be fully coherent with the game. We apologize for that.  
+#### (Re)start the game  
+Press ![Start Button](./Resources/CloseNormal.png) to start a new game.  
+#### Go back to title page
+When the game ends, press ![Return Button](./Resources/bang.png) to go back to the title page.  
+#### Move and fire
+Use `W` `A` `S` `D` to move, and `J` to fire.
+#### Choose weapons
+Select your weapons with number keys above `WASD`.
+`1` for pistol (weak but with infinite ammunition)  
+`2` for Uzi (a type of micro sub-machine gun)  
+`3` for shotgun (boasts high power)  
+`4` for barrels (explode when you shoot them; also hurts yourself)  
+It was quite a debate to set proper firepower for these weapons. Personally speaking, I think the fire rate of Uzi is too low, but that of shotgun goes too high.  
+#### HP  
+Your HP get recovered automatically but slowly as long as you do not get attacked.  
+#### Score  
+Your score increases, not immediately but gradually, as you kill zombies. Kill a grey one in level 1 and wait a while to understand the mechanism.  
+#### Invinci Mode  
+It was **too difficult** for me, as a really unskilled player, even to beat level 2. That's why I made an official cheat to fully test the game (With the cheat I did find and fix a bug in callback functions about physical effects). So just press `U` while playing, to become invincible with unlimited ammo. Press `U` again to exit Invinci Mode. Currently no visual hint is offered in the game for Invinci Mode.  
 
 ## Clone this repository
 Follow [this link](https://help.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh) to create public-private key on your workstation, and update your github account with the public key.
@@ -65,6 +88,10 @@ git clone --recurse-submodules git@github.com:Hecate2/Cpp_dev_final.git
 at `C:\cpp`. Move **EVERYTHING INCLUDING `.git` BUT EXCEPT** `CMakeLists.txt` to `C:\cpp\HelloWorld\win32-build` and replace every file. Then, **in Visual Studio**, right-click `Classes` in you solution `HelloWorld`, and add all the files in `C:\cpp\HelloWorld\Classes` to your Visual Studio solution. Similarly, add everything in `C:\cpp\HelloWorld\proj.win32` and `C:\cpp\HelloWorld\Resources` respectively to `proj.win32` and `Resources` in VS.  
 ![Adding items to VS solution](./doc/images/add_items.png)  
 Build and enjoy! If there are compilation errors like `unresolved external symbols`, check your importing of items first.  
+
+Hints:
+1. It is not recommended that you replace `CMakeLists.txt` with our version, since your `cocos2d` library and VS project might have been placed in varied directories. A rough overwriting of `CMakeLists.txt` can lead to failure of compilation.  
+2. You may find thousands of files created by Visual Studio to be included when you want to `git add` and `commit` some of them. Since your construction of developing environment can be different from ours, it is time-consuming to make a unified solution. So please help yourself to create a `.gitignore` file and ignore unnecessary files.  
 
 ## Suggested development flow
 *Correct deployment is as important as elegant codes.*  
